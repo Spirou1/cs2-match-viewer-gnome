@@ -27,121 +27,85 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as api from './api.js';
-
+import * as utils from './utils.js';
 
 const Indicator = GObject.registerClass(
     class Indicator extends PanelMenu.Button {
         _init() {
             super._init(0.0, _('My Shiny Indicator'));
 
-            const container = new St.BoxLayout({})
+            this._buildPanelIndicator();
+            this._buildMenuBase();
+            this._buildHeader();
+            this._buildMatchCard();
+            this._buildDetailsSection();
+            this._connectEvents();
+            this._loadMatches();
+        }
 
-            //icon and top label
+        _buildPanelIndicator() {
+            const container = new St.BoxLayout({});
             const icon = new St.Icon({
                 icon_name: 'find-location-symbolic',
                 style_class: 'system-status-icon',
-            })
-
-
+            });
             this.textoStatus = new St.Label({
                 text: 'Loading matches...',
                 style_class: 'top_label',
                 y_align: Clutter.ActorAlign.CENTER,
             });
+            container.add_child(icon);
+            container.add_child(this.textoStatus);
+            this.add_child(container);
+        }
 
-            container.add_child(icon)
-            container.add_child(this.textoStatus)
-            this.add_child(container)
+        _buildMenuBase() {
             this.menu.actor.style = 'width: 300px;';
-
-            //main container on menu
-            const mainMenuContainer = new PopupMenu.PopupBaseMenuItem({
+            this.mainMenuContainer = new PopupMenu.PopupBaseMenuItem({
                 reactive: false,
                 activate: false,
             });
-
-            //match container
-            const menuBoxLayout = new St.BoxLayout({
+            this.menuBoxLayout = new St.BoxLayout({
                 vertical: true,
                 style: 'spacing: 5px; padding: 10px;',
-            })
-
-            //team names, score and date
-            this.team1Label = new St.Label({
-                text: 'No teams playing right now...',
-                style_class: 'team_name',
-                y_align: Clutter.ActorAlign.CENTER,
             });
+            this.mainMenuContainer.add_child(this.menuBoxLayout);
+            this.menu.addMenuItem(this.mainMenuContainer);
+        }
 
-            this.team1Icon = new St.Icon({
-                icon_size: 20,
-                y_align: Clutter.ActorAlign.CENTER,
-                style_class: 'team_icon'
-            });
-
-            this.team1Score = new St.Label({
-                text: '(0)',
-                style_class: 'score',
-                y_align: Clutter.ActorAlign.CENTER,
-            });
-
-            this.team2Label = new St.Label({
-                text: '',
-                style_class: 'team_name',
-                y_align: Clutter.ActorAlign.CENTER,
-            });
-
-            this.team2Icon = new St.Icon({
-                icon_size: 20,
-                y_align: Clutter.ActorAlign.CENTER,
-                style_class: 'team_icon'
-            });
-
-            this.team2Score = new St.Label({
-                text: '',
-                style_class: 'score',
-                y_align: Clutter.ActorAlign.CENTER,
-            });
-
-            this.dateLabel = new St.Label({
-                text: '',
-                style_class: 'date_text',
-                y_align: Clutter.ActorAlign.CENTER,
-            });
-
+        _buildHeader() {
             this.menuTitleLabel = new St.Label({
                 text: 'Live matches right now:',
                 style_class: 'menu_title_text',
             });
+            const divisor = new St.Widget({
+                style: 'background-color: rgba(255, 255, 255, 0.15); height: 1px; margin: 10px 0;'
+            });
+            this.menuBoxLayout.add_child(this.menuTitleLabel);
+            this.menuBoxLayout.add_child(divisor);
+        }
 
+        _buildMatchCard() {
             const matchTitleContainer = new St.BoxLayout({
                 style: 'padding: 5px',
             });
-
             const teamTitle = new St.Label({
                 text: 'Teams: ',
                 style_class: 'team_title',
             });
-
             const spacer = new St.Widget({
                 x_expand: true,
             });
-
             const dateTitle = new St.Label({
                 text: 'Date: ',
                 style_class: 'date_title',
             });
+            matchTitleContainer.add_child(teamTitle);
+            matchTitleContainer.add_child(spacer);
+            matchTitleContainer.add_child(dateTitle);
+            this.menuBoxLayout.add_child(matchTitleContainer);
 
-            const divisor = new St.Widget({
-                style: 'background-color: rgba(255, 255, 255, 0.15); height: 1px; margin: 10px 0;'
-            });
-
-            const scoreDivisor = new St.Label({
-                text: '  X  ',
-                y_align: Clutter.ActorAlign.CENTER,
-            });
-
-            const matchButton = new St.Button({
+            this.matchButton = new St.Button({
                 reactive: true,
                 can_focus: true,
                 x_expand: true,
@@ -153,24 +117,47 @@ const Indicator = GObject.registerClass(
                 x_expand: true,
             });
 
-            matchButton.set_child(matchBoxLayout);
+            this.matchButton.set_child(matchBoxLayout);
 
-            this.detailBoxLayout = new St.BoxLayout({
-                vertical: true,
-                style: 'background-color: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 5px; spacing: 5px; margin-top: 5px;',
-                visible: false,
+            this.team1Label = new St.Label({
+                text: 'No teams playing right now...',
+                style_class: 'team_name',
+                y_align: Clutter.ActorAlign.CENTER,
             });
-
-            this.detailMapLabel = new St.Label({ text: 'Map: Loading...' });
-            this.detailTournamentLabel = new St.Label({ text: 'Tournament: Loading...' });
-            this.detailFormatLabel = new St.Label({ text: 'Format: Loading...' });
-
-            this.detailBoxLayout.add_child(this.detailMapLabel);
-            this.detailBoxLayout.add_child(this.detailTournamentLabel);
-            this.detailBoxLayout.add_child(this.detailFormatLabel);
-
-            menuBoxLayout.add_child(this.menuTitleLabel);
-            menuBoxLayout.add_child(divisor);
+            this.team1Icon = new St.Icon({
+                icon_size: 20,
+                y_align: Clutter.ActorAlign.CENTER,
+                style_class: 'team_icon'
+            });
+            this.team1Score = new St.Label({
+                text: '(0)',
+                style_class: 'score',
+                y_align: Clutter.ActorAlign.CENTER,
+            });
+            this.team2Label = new St.Label({
+                text: '',
+                style_class: 'team_name',
+                y_align: Clutter.ActorAlign.CENTER,
+            });
+            this.team2Icon = new St.Icon({
+                icon_size: 20,
+                y_align: Clutter.ActorAlign.CENTER,
+                style_class: 'team_icon'
+            });
+            this.team2Score = new St.Label({
+                text: '',
+                style_class: 'score',
+                y_align: Clutter.ActorAlign.CENTER,
+            });
+            this.dateLabel = new St.Label({
+                text: '',
+                style_class: 'date_text',
+                y_align: Clutter.ActorAlign.CENTER,
+            });
+            const scoreDivisor = new St.Label({
+                text: '  X  ',
+                y_align: Clutter.ActorAlign.CENTER,
+            });
 
             matchBoxLayout.add_child(this.team1Icon);
             matchBoxLayout.add_child(this.team1Label);
@@ -181,23 +168,30 @@ const Indicator = GObject.registerClass(
             matchBoxLayout.add_child(this.team2Label);
             matchBoxLayout.add_child(this.dateLabel);
 
-            matchTitleContainer.add_child(teamTitle);
-            matchTitleContainer.add_child(spacer);
-            matchTitleContainer.add_child(dateTitle);
+            this.menuBoxLayout.add_child(this.matchButton);
+        }
 
-            menuBoxLayout.add_child(matchTitleContainer);
-            menuBoxLayout.add_child(matchButton);
-            menuBoxLayout.add_child(this.detailBoxLayout);
+        _buildDetailsSection() {
+            this.detailBoxLayout = new St.BoxLayout({
+                vertical: true,
+                style: 'background-color: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 5px; spacing: 5px; margin-top: 5px;',
+                visible: false,
+            });
+            this.detailMapLabel = new St.Label({ text: 'Map: Loading...' });
+            this.detailTournamentLabel = new St.Label({ text: 'Tournament: Loading...' });
+            this.detailFormatLabel = new St.Label({ text: 'Format: Loading...' });
 
-            mainMenuContainer.add_child(menuBoxLayout);
+            this.detailBoxLayout.add_child(this.detailMapLabel);
+            this.detailBoxLayout.add_child(this.detailTournamentLabel);
+            this.detailBoxLayout.add_child(this.detailFormatLabel);
 
-            this.menu.addMenuItem(mainMenuContainer);
+            this.menuBoxLayout.add_child(this.detailBoxLayout);
+        }
 
-            matchButton.connect('clicked', () => {
+        _connectEvents() {
+            this.matchButton.connect('clicked', () => {
                 this.detailBoxLayout.visible = !this.detailBoxLayout.visible;
             });
-
-            this._loadMatches();
         }
 
         async _loadMatches() {
