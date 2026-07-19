@@ -50,3 +50,33 @@
 .match_button:active {
     background-color: rgba(255, 255, 255, 0.12);
 }
+
+.tournament_logo {
+    icon-size: 75px;
+    padding: 8px;
+}
+
+.back_button {
+    background-color: transparent;
+    border: none;
+    padding: 4px;
+}
+      
+.back_button:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+}
+
+.team_logo_detail {
+    padding: 20px;
+    icon-size: 35px;
+}
+
+.detail_content_label {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.tournament_name_detail {
+    font-size: 20px;
+}

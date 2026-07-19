@@ -20,6 +20,7 @@ import GObject from 'gi://GObject';
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 
 import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
@@ -36,6 +37,17 @@ const Indicator = GObject.registerClass(
 
             this._buildPanelIndicator();
             this._buildMenuBase();
+
+            this.mainPage = new St.BoxLayout({ vertical: true });
+            this.detailsPage = new St.BoxLayout({ 
+                vertical: true, 
+                visible: false,
+                style: 'padding: 10px;',
+            });
+
+            this.menuBoxLayout.add_child(this.mainPage);
+            this.menuBoxLayout.add_child(this.detailsPage);
+
             this._buildHeader();
             this._buildMatchCard();
             this._buildDetailsSection();
@@ -60,7 +72,7 @@ const Indicator = GObject.registerClass(
         }
 
         _buildMenuBase() {
-            this.menu.actor.style = 'width: 300px;';
+            this.menu.actor.style = 'width: 480px;';
             this.mainMenuContainer = new PopupMenu.PopupBaseMenuItem({
                 reactive: false,
                 activate: false,
@@ -81,8 +93,8 @@ const Indicator = GObject.registerClass(
             const divisor = new St.Widget({
                 style: 'background-color: rgba(255, 255, 255, 0.15); height: 1px; margin: 10px 0;'
             });
-            this.menuBoxLayout.add_child(this.menuTitleLabel);
-            this.menuBoxLayout.add_child(divisor);
+            this.mainPage.add_child(this.menuTitleLabel);
+            this.mainPage.add_child(divisor);
         }
 
         _buildMatchCard() {
@@ -103,7 +115,7 @@ const Indicator = GObject.registerClass(
             matchTitleContainer.add_child(teamTitle);
             matchTitleContainer.add_child(spacer);
             matchTitleContainer.add_child(dateTitle);
-            this.menuBoxLayout.add_child(matchTitleContainer);
+            this.mainPage.add_child(matchTitleContainer);
 
             this.matchButton = new St.Button({
                 reactive: true,
@@ -168,29 +180,118 @@ const Indicator = GObject.registerClass(
             matchBoxLayout.add_child(this.team2Label);
             matchBoxLayout.add_child(this.dateLabel);
 
-            this.menuBoxLayout.add_child(this.matchButton);
+            this.mainPage.add_child(this.matchButton);
         }
 
         _buildDetailsSection() {
-            this.detailBoxLayout = new St.BoxLayout({
-                vertical: true,
-                style: 'background-color: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 5px; spacing: 5px; margin-top: 5px;',
-                visible: false,
+            this.backButtonLabelContainer = new St.BoxLayout({ x_expand: true })
+            
+            this.backButton = new St.Button({
+                reactive: true,
+                can_focus: true,
+                x_expand: false,
+                x_align: Clutter.ActorAlign.START,
+                y_align: Clutter.ActorAlign.CENTER,
+                style_class: 'back_button',
             });
-            this.detailMapLabel = new St.Label({ text: 'Map: Loading...' });
-            this.detailTournamentLabel = new St.Label({ text: 'Tournament: Loading...' });
-            this.detailFormatLabel = new St.Label({ text: 'Format: Loading...' });
 
-            this.detailBoxLayout.add_child(this.detailMapLabel);
-            this.detailBoxLayout.add_child(this.detailTournamentLabel);
-            this.detailBoxLayout.add_child(this.detailFormatLabel);
+            const backButtonIcon = new St.Icon({
+                icon_name: 'pan-start-symbolic',
+            });
 
-            this.menuBoxLayout.add_child(this.detailBoxLayout);
+            this.backButton.set_child(backButtonIcon)
+
+            this.detailContentLabel = new St.Label({
+                text: 'Detailed view:',
+                style_class: 'detail_content_label',
+                y_align: Clutter.ActorAlign.CENTER,
+            });
+
+            this.tournamentLogoLabelContainer = new St.BoxLayout({
+                vertical: true,
+                x_expand: true,
+            });
+
+            this.tournamentLogo = new St.Icon({
+                style_class: 'tournament_logo',
+            });
+
+            this.tournamentNameDetail = new St.Label({
+                text: '',
+                style_class: 'tournament_name_detail',
+            });
+
+            this.teamsLogosDetailContainer = new St.BoxLayout({ 
+                x_expand: true,
+            });
+
+            this.team1ContainerDetail = new St.BoxLayout({
+                vertical: true,
+                x_expand: true,
+            });
+
+            this.team1IconDetail = new St.Icon({
+                style_class: 'team_logo_detail',
+                x_align: Clutter.ActorAlign.CENTER,
+            });
+
+            this.team1NameDetail = new St.Label({
+                text: 'Unknown team',
+                style_class: 'team_name_detail',
+                x_align: Clutter.ActorAlign.CENTER,
+            });
+
+            this.team2ContainerDetail = new St.BoxLayout({
+                vertical: true,
+                x_expand: true,
+            })
+
+            this.team2IconDetail = new St.Icon({
+                style_class: 'team_logo_detail',
+                x_align: Clutter.ActorAlign.CENTER,
+            });
+
+            this.team2NameDetail = new St.Label({
+                text: 'Unknown team',
+                style_class: 'team_name_detail',
+                x_align: Clutter.ActorAlign.CENTER,
+            });
+
+            this.team1ContainerDetail.add_child(this.team1IconDetail);
+            this.team1ContainerDetail.add_child(this.team1NameDetail);
+            this.team2ContainerDetail.add_child(this.team2IconDetail);
+            this.team2ContainerDetail.add_child(this.team2NameDetail);
+
+            this.teamsLogosDetailContainer.add_child(this.team1ContainerDetail);
+            this.teamsLogosDetailContainer.add_child(this.team2ContainerDetail);
+
+
+            this.backButtonLabelContainer.add_child(this.backButton);
+            this.backButtonLabelContainer.add_child(this.detailContentLabel);
+
+            this.tournamentLogoLabelContainer.add_child(this.tournamentLogo);
+            this.tournamentLogoLabelContainer.add_child(this.tournamentNameDetail);
+
+            this.detailsPage.add_child(this.backButtonLabelContainer);
+            this.detailsPage.add_child(this.tournamentLogoLabelContainer);
+            this.detailsPage.add_child(this.teamsLogosDetailContainer);
         }
 
         _connectEvents() {
             this.matchButton.connect('clicked', () => {
-                this.detailBoxLayout.visible = !this.detailBoxLayout.visible;
+                GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+                    this.mainPage.visible = false;
+                    this.detailsPage.visible = true;
+                    return GLib.SOURCE_REMOVE;
+                });
+            });
+
+            this.backButton.connect('clicked', () => {
+                GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+                    this.mainPage.visible = true;
+                    this.detailsPage.visible = false;
+                    return GLib.SOURCE_REMOVE;
+                });
             });
         }
 
@@ -199,45 +300,57 @@ const Indicator = GObject.registerClass(
                 const matchesJson = await api.fetchMatches();
 
                 if (matchesJson && matchesJson.data && matchesJson.data.length > 0) {
+                    //team names, scores and logos
                     const match = matchesJson.data[0];
-                    const team1 = matchesJson.included.teams[match.team1].name;
-                    const team2 = matchesJson.included.teams[match.team2].name;
-
+                    const team1name = matchesJson.included.teams[match.team1].name;
+                    const team2name = matchesJson.included.teams[match.team2].name;
                     const team1Logo = matchesJson.included.teams[match.team1].image_versions['50x50'];
                     const team2Logo = matchesJson.included.teams[match.team2].image_versions['50x50'];
 
+                    const team1Score = match.team1_last_game_score;
+                    const team2Score = match.team2_last_game_score;
+
+                    //formatting date
                     const dateObj = new Date(match.start_date);
                     const day = String(dateObj.getUTCDate()).padStart(2, '0');
                     const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
                     const year = dateObj.getUTCFullYear();
                     const date = `${day}-${month}-${year}`;
 
-                    const team1Score = match.team1_last_game_score;
-                    const team2Score = match.team2_last_game_score;
-
+                    //details section stuff
                     const mapName = match.live_updates ? match.live_updates.map_name : 'TBD';
                     const tournamentId = match.tournament;
                     const tournamentName = matchesJson.included.tournaments[tournamentId]
                         ? matchesJson.included.tournaments[tournamentId].name
                         : 'Unknown Tournament';
-                    const format = `Best of ${match.bo_type} (MD${match.bo_type})`;
+                    const tournamentLogo = matchesJson.included.tournaments[match.tournament].image_url;
+                    const team1LogoDetail = matchesJson.included.teams[match.team1].image_url;
+                    const team2LogoDetail = matchesJson.included.teams[match.team2].image_url;
 
                     this.textoStatus.text = 'Live Matches';
-                    this.team1Label.text = team1;
+                    this.team1Label.text = team1name;
                     this.team1Score.text = String(team1Score);
                     this.team2Score.text = String(team2Score);
-                    this.team2Label.text = team2;
+                    this.team2Label.text = team2name;
                     this.dateLabel.text = date;
-
-                    this.detailMapLabel.text = `Map: ${mapName}`;
-                    this.detailTournamentLabel.text = `Tournament: ${tournamentName}`;
-                    this.detailFormatLabel.text = `Format: ${format}`;
+                    this.tournamentNameDetail.text = tournamentName;
+                    this.team1NameDetail.text = team1name;
+                    this.team2NameDetail.text = team2name;
 
                     if (team1Logo) {
                         this.team1Icon.gicon = Gio.Icon.new_for_string(team1Logo);
                     }
                     if (team2Logo) {
                         this.team2Icon.gicon = Gio.Icon.new_for_string(team2Logo);
+                    }
+                    if (tournamentLogo) {
+                        this.tournamentLogo.gicon = Gio.Icon.new_for_string(tournamentLogo);
+                    }
+                    if (team1LogoDetail) {
+                            this.team1IconDetail.gicon = Gio.Icon.new_for_string(team1LogoDetail);
+                    }
+                    if (team2LogoDetail) {
+                        this.team2IconDetail.gicon = Gio.Icon.new_for_string(team2LogoDetail);
                     }
 
                 } else {

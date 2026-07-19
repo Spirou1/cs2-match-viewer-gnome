@@ -4,19 +4,13 @@ import GLib from 'gi://GLib';
 
 export async function fetchMatches() {
     /* =========================================================================
-     * MOCK TEMPORÁRIO PARA DESENVOLVIMENTO
-     * -------------------------------------------------------------------------
-     * Lê o arquivo 'jsonExemplo.json' local enquanto não há partidas ao vivo.
-     * Para voltar a usar a API real, basta comentar este bloco de leitura 
-     * e descomentar a requisição HTTP com o Soup abaixo.
+     * MOCK 
      * ========================================================================= */
     try {
-        const currentFilePath = import.meta.url.replace('file://', '');
-        const currentDir = GLib.path_get_dirname(currentFilePath);
-        const jsonPath = GLib.build_filenamev([currentDir, 'jsonExemplo.json']);
-
-        const file = Gio.File.new_for_path(jsonPath);
-        const [success, contents] = file.load_contents(null);
+        const currentFile = Gio.File.new_for_uri(import.meta.url);
+        const currentDir = currentFile.get_parent();
+        const jsonFile = currentDir.get_child('jsonExemplo.json');
+        const [success, contents] = jsonFile.load_contents(null);
         
         if (success) {
             const decoder = new TextDecoder('utf-8');
@@ -30,7 +24,7 @@ export async function fetchMatches() {
     }
 
     /* =========================================================================
-     * CÓDIGO DA API REAL (HTTP REQUEST COM LIBSOUP 3)
+     * 
      * -------------------------------------------------------------------------
     const session = new Soup.Session();
     const message = Soup.Message.new('GET', 'https://api.bo3.gg/api/v2/matches/live?filter[discipline_id][eq]=1');
