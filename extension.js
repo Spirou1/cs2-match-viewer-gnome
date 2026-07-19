@@ -28,19 +28,20 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as api from './api.js';
-import * as utils from './utils.js';
+import { parseMatchMaps } from './utils.js';
 
 const Indicator = GObject.registerClass(
     class Indicator extends PanelMenu.Button {
-        _init() {
+        _init(extensionInstance) {
             super._init(0.0, _('My Shiny Indicator'));
+            this._extension = extensionInstance;
 
             this._buildPanelIndicator();
             this._buildMenuBase();
 
             this.mainPage = new St.BoxLayout({ vertical: true });
-            this.detailsPage = new St.BoxLayout({ 
-                vertical: true, 
+            this.detailsPage = new St.BoxLayout({
+                vertical: true,
                 visible: false,
                 style: 'padding: 10px;',
             });
@@ -49,10 +50,24 @@ const Indicator = GObject.registerClass(
             this.menuBoxLayout.add_child(this.detailsPage);
 
             this._buildHeader();
-            this._buildMatchCard();
+            this.cardsContainer = new St.BoxLayout({ vertical: true });
+            this.mainPage.add_child(this.cardsContainer);
             this._buildDetailsSection();
             this._connectEvents();
             this._loadMatches();
+
+            //updating score every minute
+            this._timeoutId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => {
+                this._loadMatches();
+                return GLib.SOURCE_CONTINUE;
+            });
+
+            this.connect('destroy', () => {
+                if (this._timeoutId) {
+                    GLib.Source.remove(this._timeoutId);
+                    this._timeoutId = null;
+                }
+            });
         }
 
         _buildPanelIndicator() {
@@ -86,18 +101,41 @@ const Indicator = GObject.registerClass(
         }
 
         _buildHeader() {
-            this.menuTitleLabel = new St.Label({
-                text: 'Live matches right now:',
-                style_class: 'menu_title_text',
+
+            const headerContainer = new St.BoxLayout({
+                y_align: Clutter.ActorAlign.CENTER,
             });
+
+
+            const iconFile = this._extension.dir.get_child('assets').get_child('cs-logo.png');
+            const headerIcon = new St.Widget({
+                style_class: 'cs_logo_icon',
+                style: `background-image: url("${iconFile.get_path()}"); width: 76px; height: 44px; margin-bottom: 5px;`,
+                y_align: Clutter.ActorAlign.CENTER
+            });
+
+            this.menuTitleLabel = new St.Label({
+                text: 'CS2 Match Viewer',
+                style_class: 'menu_title_text',
+                y_align: Clutter.ActorAlign.CENTER
+            });
+
+            headerContainer.add_child(headerIcon);
+            headerContainer.add_child(this.menuTitleLabel);
+
             const divisor = new St.Widget({
                 style: 'background-color: rgba(255, 255, 255, 0.15); height: 1px; margin: 10px 0;'
             });
-            this.mainPage.add_child(this.menuTitleLabel);
-            this.mainPage.add_child(divisor);
-        }
 
-        _buildMatchCard() {
+            const subtitle = new St.Label({
+                text: 'Live matches right now:',
+                style_class: 'menu_subtitle_text',
+            });
+
+            this.mainPage.add_child(headerContainer);
+            this.mainPage.add_child(divisor);
+            this.mainPage.add_child(subtitle)
+
             const matchTitleContainer = new St.BoxLayout({
                 style: 'padding: 5px',
             });
@@ -108,6 +146,7 @@ const Indicator = GObject.registerClass(
             const spacer = new St.Widget({
                 x_expand: true,
             });
+
             const dateTitle = new St.Label({
                 text: 'Date: ',
                 style_class: 'date_title',
@@ -116,8 +155,32 @@ const Indicator = GObject.registerClass(
             matchTitleContainer.add_child(spacer);
             matchTitleContainer.add_child(dateTitle);
             this.mainPage.add_child(matchTitleContainer);
+        }
 
-            this.matchButton = new St.Button({
+        _createMatchCard(match, matchesJson) {
+            const iconFile = this._extension.dir.get_child('assets').get_child('cs-logo.png');
+            const placeholderPath = iconFile.get_path();
+
+            const team1name = matchesJson.included?.teams?.[match.team1]?.name || 'Unknown Team 1';
+            const team2name = matchesJson.included?.teams?.[match.team2]?.name || 'Unknown Team 2';
+            const team1Logo = matchesJson.included?.teams?.[match.team1]?.image_versions?.['50x50'] || null;
+            const team2Logo = matchesJson.included?.teams?.[match.team2]?.image_versions?.['50x50'] || null;
+
+            const team1RoundScore = match.team1_last_game_score ?? '-';
+            const team2RoundScore = match.team2_last_game_score ?? '-';
+            const team1MapScore = match.team1_score ?? '(-)';
+            const team2MapScore = match.team2_score ?? '(-)';
+
+            const team1ScoreText = `(${team1MapScore}) ${team1RoundScore}`;
+            const team2ScoreText = `(${team2MapScore}) ${team2RoundScore}`;
+
+            const dateObj = new Date(match.start_date);
+            const day = String(dateObj.getUTCDate()).padStart(2, '0');
+            const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+            const year = dateObj.getUTCFullYear();
+            const date = `${day}-${month}-${year}`;
+
+            const matchButton = new St.Button({
                 reactive: true,
                 can_focus: true,
                 x_expand: true,
@@ -129,40 +192,46 @@ const Indicator = GObject.registerClass(
                 x_expand: true,
             });
 
-            this.matchButton.set_child(matchBoxLayout);
+            matchButton.set_child(matchBoxLayout);
 
-            this.team1Label = new St.Label({
-                text: 'No teams playing right now...',
+            const team1Label = new St.Label({
+                text: team1name,
                 style_class: 'team_name',
                 y_align: Clutter.ActorAlign.CENTER,
             });
-            this.team1Icon = new St.Icon({
-                icon_size: 20,
+            const team1Icon = new St.Widget({
+                style_class: 'team_icon',
+                style: team1Logo
+                    ? `background-image: url("${team1Logo}");`
+                    : `background-image: url("${placeholderPath}");`,
                 y_align: Clutter.ActorAlign.CENTER,
-                style_class: 'team_icon'
             });
-            this.team1Score = new St.Label({
-                text: '(0)',
+            
+            const team1ScoreLabel = new St.Label({
+                text: String(team1ScoreText),
                 style_class: 'score',
                 y_align: Clutter.ActorAlign.CENTER,
             });
-            this.team2Label = new St.Label({
-                text: '',
+            const team2Label = new St.Label({
+                text: team2name,
                 style_class: 'team_name',
                 y_align: Clutter.ActorAlign.CENTER,
             });
-            this.team2Icon = new St.Icon({
-                icon_size: 20,
+            const team2Icon = new St.Widget({
+                style_class: 'team_icon',
+                style: team2Logo
+                    ? `background-image: url("${team2Logo}");`
+                    : `background-image: url("${placeholderPath}");`,
                 y_align: Clutter.ActorAlign.CENTER,
-                style_class: 'team_icon'
             });
-            this.team2Score = new St.Label({
-                text: '',
+
+            const team2ScoreLabel = new St.Label({
+                text: String(team2ScoreText),
                 style_class: 'score',
                 y_align: Clutter.ActorAlign.CENTER,
             });
-            this.dateLabel = new St.Label({
-                text: '',
+            const dateLabel = new St.Label({
+                text: date,
                 style_class: 'date_text',
                 y_align: Clutter.ActorAlign.CENTER,
             });
@@ -171,21 +240,78 @@ const Indicator = GObject.registerClass(
                 y_align: Clutter.ActorAlign.CENTER,
             });
 
-            matchBoxLayout.add_child(this.team1Icon);
-            matchBoxLayout.add_child(this.team1Label);
-            matchBoxLayout.add_child(this.team1Score);
-            matchBoxLayout.add_child(scoreDivisor);
-            matchBoxLayout.add_child(this.team2Score);
-            matchBoxLayout.add_child(this.team2Icon);
-            matchBoxLayout.add_child(this.team2Label);
-            matchBoxLayout.add_child(this.dateLabel);
+            const spacer = new St.Widget({
+                x_expand: true,
+            });
 
-            this.mainPage.add_child(this.matchButton);
+            matchBoxLayout.add_child(team1Icon);
+            matchBoxLayout.add_child(team1Label);
+            matchBoxLayout.add_child(team1ScoreLabel);
+            matchBoxLayout.add_child(scoreDivisor);
+            matchBoxLayout.add_child(team2ScoreLabel);
+            matchBoxLayout.add_child(team2Icon);
+            matchBoxLayout.add_child(team2Label);
+            matchBoxLayout.add_child(spacer);
+            matchBoxLayout.add_child(dateLabel);
+
+            //on click to show details page
+            matchButton.connect('clicked', () => {
+                GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+                    const tournamentId = match.tournament;
+                    const tournamentName = matchesJson.included?.tournaments?.[tournamentId]?.name || 'Unknown Tournament';
+                    const tournamentLogo = matchesJson.included?.tournaments?.[match.tournament]?.image_url || null;
+                    const team1LogoDetail = matchesJson.included?.teams?.[match.team1]?.image_url || null;
+                    const team2LogoDetail = matchesJson.included?.teams?.[match.team2]?.image_url || null;
+
+                    //maps array
+                    // log(`Mapa ${game.number}: ${game.map_name} - Status: ${game.status}`);
+                    const maps = parseMatchMaps(match);
+
+                    if (maps) {
+                        this.map1Detail.text = maps[0]?.map_name;
+                        this.map2Detail.text = maps[1]?.map_name;
+                        this.map3Detail.text = maps[2]?.map_name;
+                    }
+
+                    this.tournamentNameDetail.text = tournamentName;
+                    this.team1NameDetail.text = team1name;
+                    this.team2NameDetail.text = team2name;
+                    this.team1ScoreDetail.text = String(team1ScoreText);
+                    this.team2ScoreDetail.text = String(team2ScoreText);
+
+                    const iconFile = this._extension.dir.get_child('assets').get_child('cs-logo.png');
+                    const placeholderPath = iconFile.get_path();
+
+                    if (tournamentLogo) {
+                        this.tournamentLogo.style = `background-image: url("${tournamentLogo}");`;
+                    } else {
+                        this.tournamentLogo.style = `background-image: url("${placeholderPath}");`;
+                    }
+
+                    if (team1LogoDetail) {
+                        this.team1IconDetail.style = `background-image: url("${team1LogoDetail}");`;
+                    } else {
+                        this.team1IconDetail.style = `background-image: url("${placeholderPath}");`;
+                    }
+
+                    if (team2LogoDetail) {
+                        this.team2IconDetail.style = `background-image: url("${team2LogoDetail}");`;
+                    } else {
+                        this.team2IconDetail.style = `background-image: url("${placeholderPath}");`;
+                    }
+
+                    this.mainPage.visible = false;
+                    this.detailsPage.visible = true;
+                    return GLib.SOURCE_REMOVE;
+                });
+            });
+
+            return matchButton;
         }
 
         _buildDetailsSection() {
             this.backButtonLabelContainer = new St.BoxLayout({ x_expand: true })
-            
+
             this.backButton = new St.Button({
                 reactive: true,
                 can_focus: true,
@@ -207,13 +333,19 @@ const Indicator = GObject.registerClass(
                 y_align: Clutter.ActorAlign.CENTER,
             });
 
+            const divisor = new St.Widget({
+                style: 'background-color: rgba(255, 255, 255, 0.15); height: 1px; margin: 10px 0;'
+            });
+
             this.tournamentLogoLabelContainer = new St.BoxLayout({
                 vertical: true,
                 x_expand: true,
+                style_class: 'tournament_logo_label',
             });
 
-            this.tournamentLogo = new St.Icon({
+            this.tournamentLogo = new St.Widget({
                 style_class: 'tournament_logo',
+                x_align: Clutter.ActorAlign.CENTER,
             });
 
             this.tournamentNameDetail = new St.Label({
@@ -221,7 +353,7 @@ const Indicator = GObject.registerClass(
                 style_class: 'tournament_name_detail',
             });
 
-            this.teamsLogosDetailContainer = new St.BoxLayout({ 
+            this.teamsLogosDetailContainer = new St.BoxLayout({
                 x_expand: true,
             });
 
@@ -230,7 +362,7 @@ const Indicator = GObject.registerClass(
                 x_expand: true,
             });
 
-            this.team1IconDetail = new St.Icon({
+            this.team1IconDetail = new St.Widget({
                 style_class: 'team_logo_detail',
                 x_align: Clutter.ActorAlign.CENTER,
             });
@@ -241,12 +373,18 @@ const Indicator = GObject.registerClass(
                 x_align: Clutter.ActorAlign.CENTER,
             });
 
+            this.team1ScoreDetail = new St.Label({
+                text: '-',
+                style_class: 'team_score_detail',
+                x_align: Clutter.ActorAlign.CENTER,
+            });
+
             this.team2ContainerDetail = new St.BoxLayout({
                 vertical: true,
                 x_expand: true,
             })
 
-            this.team2IconDetail = new St.Icon({
+            this.team2IconDetail = new St.Widget({
                 style_class: 'team_logo_detail',
                 x_align: Clutter.ActorAlign.CENTER,
             });
@@ -257,10 +395,48 @@ const Indicator = GObject.registerClass(
                 x_align: Clutter.ActorAlign.CENTER,
             });
 
+            this.team2ScoreDetail = new St.Label({
+                text: '-',
+                style_class: 'team_score_detail',
+                x_align: Clutter.ActorAlign.CENTER,
+            });
+
+            this.mapsContainer = new St.BoxLayout({
+                vertical: true,
+                x_expand: true,
+                style_class: 'maps_container',
+            });
+
+            const mapContainerTitle = new St.Label({
+                text: 'Maps:',
+                style_class: 'maps_container_title',
+                x_align: Clutter.ActorAlign.CENTER,
+            });
+
+            this.map1Detail = new St.Label({
+                text: 'TBD',
+                style_class: 'map_name_detail',
+                x_align: Clutter.ActorAlign.CENTER,
+            });
+
+            this.map2Detail = new St.Label({
+                text: 'TBD',
+                style_class: 'map_name_detail',
+                x_align: Clutter.ActorAlign.CENTER,
+            });
+
+            this.map3Detail = new St.Label({
+                text: 'TBD',
+                style_class: 'map_name_detail',
+                x_align: Clutter.ActorAlign.CENTER,
+            });
+
             this.team1ContainerDetail.add_child(this.team1IconDetail);
             this.team1ContainerDetail.add_child(this.team1NameDetail);
+            this.team1ContainerDetail.add_child(this.team1ScoreDetail);
             this.team2ContainerDetail.add_child(this.team2IconDetail);
             this.team2ContainerDetail.add_child(this.team2NameDetail);
+            this.team2ContainerDetail.add_child(this.team2ScoreDetail);
 
             this.teamsLogosDetailContainer.add_child(this.team1ContainerDetail);
             this.teamsLogosDetailContainer.add_child(this.team2ContainerDetail);
@@ -272,20 +448,19 @@ const Indicator = GObject.registerClass(
             this.tournamentLogoLabelContainer.add_child(this.tournamentLogo);
             this.tournamentLogoLabelContainer.add_child(this.tournamentNameDetail);
 
+            this.mapsContainer.add_child(mapContainerTitle);
+            this.mapsContainer.add_child(this.map1Detail);
+            this.mapsContainer.add_child(this.map2Detail);
+            this.mapsContainer.add_child(this.map3Detail);
+
             this.detailsPage.add_child(this.backButtonLabelContainer);
+            this.detailsPage.add_child(divisor);
             this.detailsPage.add_child(this.tournamentLogoLabelContainer);
             this.detailsPage.add_child(this.teamsLogosDetailContainer);
+            this.detailsPage.add_child(this.mapsContainer);
         }
 
         _connectEvents() {
-            this.matchButton.connect('clicked', () => {
-                GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-                    this.mainPage.visible = false;
-                    this.detailsPage.visible = true;
-                    return GLib.SOURCE_REMOVE;
-                });
-            });
-
             this.backButton.connect('clicked', () => {
                 GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
                     this.mainPage.visible = true;
@@ -297,62 +472,27 @@ const Indicator = GObject.registerClass(
 
         async _loadMatches() {
             try {
+                //making the api call
                 const matchesJson = await api.fetchMatches();
 
+                this.cardsContainer.destroy_all_children();
+
                 if (matchesJson && matchesJson.data && matchesJson.data.length > 0) {
-                    //team names, scores and logos
-                    const match = matchesJson.data[0];
-                    const team1name = matchesJson.included.teams[match.team1].name;
-                    const team2name = matchesJson.included.teams[match.team2].name;
-                    const team1Logo = matchesJson.included.teams[match.team1].image_versions['50x50'];
-                    const team2Logo = matchesJson.included.teams[match.team2].image_versions['50x50'];
-
-                    const team1Score = match.team1_last_game_score;
-                    const team2Score = match.team2_last_game_score;
-
-                    //formatting date
-                    const dateObj = new Date(match.start_date);
-                    const day = String(dateObj.getUTCDate()).padStart(2, '0');
-                    const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
-                    const year = dateObj.getUTCFullYear();
-                    const date = `${day}-${month}-${year}`;
-
-                    //details section stuff
-                    const mapName = match.live_updates ? match.live_updates.map_name : 'TBD';
-                    const tournamentId = match.tournament;
-                    const tournamentName = matchesJson.included.tournaments[tournamentId]
-                        ? matchesJson.included.tournaments[tournamentId].name
-                        : 'Unknown Tournament';
-                    const tournamentLogo = matchesJson.included.tournaments[match.tournament].image_url;
-                    const team1LogoDetail = matchesJson.included.teams[match.team1].image_url;
-                    const team2LogoDetail = matchesJson.included.teams[match.team2].image_url;
-
                     this.textoStatus.text = 'Live Matches';
-                    this.team1Label.text = team1name;
-                    this.team1Score.text = String(team1Score);
-                    this.team2Score.text = String(team2Score);
-                    this.team2Label.text = team2name;
-                    this.dateLabel.text = date;
-                    this.tournamentNameDetail.text = tournamentName;
-                    this.team1NameDetail.text = team1name;
-                    this.team2NameDetail.text = team2name;
+                    this.menuTitleLabel.text = 'Live CS2 matches right now:';
 
-                    if (team1Logo) {
-                        this.team1Icon.gicon = Gio.Icon.new_for_string(team1Logo);
-                    }
-                    if (team2Logo) {
-                        this.team2Icon.gicon = Gio.Icon.new_for_string(team2Logo);
-                    }
-                    if (tournamentLogo) {
-                        this.tournamentLogo.gicon = Gio.Icon.new_for_string(tournamentLogo);
-                    }
-                    if (team1LogoDetail) {
-                            this.team1IconDetail.gicon = Gio.Icon.new_for_string(team1LogoDetail);
-                    }
-                    if (team2LogoDetail) {
-                        this.team2IconDetail.gicon = Gio.Icon.new_for_string(team2LogoDetail);
-                    }
+                    //gathering each match from the data field
+                    matchesJson.data.forEach((match, index) => {
+                        const matchCard = this._createMatchCard(match, matchesJson);
+                        this.cardsContainer.add_child(matchCard);
 
+                        if (index < matchesJson.data.length - 1) {
+                            const cardDivisor = new St.Widget({
+                                style: 'background-color: rgba(255, 255, 255, 0.1); height: 1px; margin: 8px 0;'
+                            });
+                            this.cardsContainer.add_child(cardDivisor);
+                        }
+                    });
                 } else {
                     this.textoStatus.text = 'No games';
                     this.menuTitleLabel.text = 'There are no games right now...';
@@ -367,7 +507,7 @@ const Indicator = GObject.registerClass(
 
 export default class IndicatorExampleExtension extends Extension {
     enable() {
-        this._indicator = new Indicator();
+        this._indicator = new Indicator(this);
         Main.panel.addToStatusArea(this.uuid, this._indicator);
     }
 

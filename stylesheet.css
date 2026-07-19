@@ -3,20 +3,25 @@
 }
 
 .menu_title_text {
-    font-size: 16px;
-    color: #999;
+    font-size: 18px;
+    color: white;
+    margin-left: 10px;
 }
 
+.menu_subtitle_text {
+    margin-bottom: 10px;
+    font-size: 18px;
+}
 .team_name {
-    font-size: 13px;
+    font-size: 15px;
     color: white;
     padding: 2px 4px;
 }
 
 .date_text {
-    font-size: 11px;
+    font-size: 14px;
     color: #888;
-    padding-left: 10px;
+    margin-left: 30px;
 }
 
 .score {
@@ -35,42 +40,53 @@
 }
 
 .team_icon {
-    padding: 2px;
+    width: 25px;
+    height: 25px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    margin-right: 4px;
 }
+
 
 .match_button {
     border-radius: 4px;
     transition: background-color 0.15s ease;
+    padding: 5px;
 }
 
 .match_button:hover {
     background-color: rgba(255, 255, 255, 0.06);
+    border-radius: 99px;
+    padding: 5px;
 }
 
 .match_button:active {
     background-color: rgba(255, 255, 255, 0.12);
-}
-
-.tournament_logo {
-    icon-size: 75px;
-    padding: 8px;
+    border-radius: 99px;
+    padding: 5px;
 }
 
 .back_button {
     background-color: transparent;
     border: none;
-    padding: 4px;
-}
-      
-.back_button:hover {
-    background-color: rgba(255, 255, 255, 0.15);
-    border-radius: 4px;
+    width: 28px;
+    height: 28px;
+    border-radius: 99px;
+    margin-right: 8px;
+    padding: 0;
 }
 
-.team_logo_detail {
-    padding: 20px;
-    icon-size: 35px;
+.back_button:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-radius: 99px;
 }
+
+.back_button:active {
+    background-color: rgba(255, 255, 255, 0.25);
+    border-radius: 99px;
+}
+
 
 .detail_content_label {
     font-size: 18px;
@@ -79,4 +95,52 @@
 
 .tournament_name_detail {
     font-size: 20px;
+}
+
+.cs_logo_icon {
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.team_score_detail {
+    font-size: 22px;
+    color: green;
+}
+
+.maps_container {
+    margin-top: 30px;
+}
+
+.tournament_logo {
+    width: 120px;
+    height: 60px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.team_logo_detail {
+    width: 64px;
+    height: 64px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.tournament_logo_label {
+    margin-bottom: 20px;
+    margin-top: 10px;
+}
+
+.team_name_detail {
+    font-size: 20px;
+    color: white;
+    margin: 10px;
+}
+
+.tournament_name_detail {
+    margin-top: 10px;
+    font-size: 22px;
+    color: white;
 }
