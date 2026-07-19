@@ -1,0 +1,53 @@
+/* Add your custom extension styling here */
+
+.top_label {
+    color: white;
+}
+
+.menu_title_text {
+    font-size: 18px;
+    color: white;
+}
+
+.team_name {
+    font-size: 18px;
+    color: white;
+    padding: 5px;
+}
+
+.date_text {
+    font-size: 14px;
+    color: white;
+    padding-left: 35px;
+}
+
+.score {
+    font-size: 24px;
+    color: green;
+    padding: 10px;
+}
+
+.date_title {
+    margin-right: 0px;
+}
+
+.team_title {
+    font-size: 14px;
+}
+
+.team_icon {
+    padding: 10px;
+}
+
+.match_button {
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.match_button:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.match_button:active {
+    background-color: rgba(255, 255, 255, 0.15);
+}
