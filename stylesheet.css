@@ -12,6 +12,7 @@
     margin-bottom: 10px;
     font-size: 18px;
 }
+
 .team_name {
     font-size: 15px;
     color: white;
@@ -160,4 +161,26 @@
 .map_name_detail:hover {
     background-color: rgba(255, 255, 255, 0.15);
     border-radius: 99px;
+}
+
+.tabs_container {
+    margin: 5px 0 10px 0;
+}
+
+.tab_button {
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.6);
+    border-bottom: 2px solid transparent;
+}
+
+.tab_button:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+    border-radius: 99px;
+}
+
+.tab_button_active {
+    color: #ffffff;
+    border-bottom: 2px solid #3584e4;
 }

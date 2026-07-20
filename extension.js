@@ -50,8 +50,25 @@ const Indicator = GObject.registerClass(
             this.menuBoxLayout.add_child(this.detailsPage);
 
             this._buildHeader();
-            this.cardsContainer = new St.BoxLayout({ vertical: true });
-            this.mainPage.add_child(this.cardsContainer);
+
+            const scrollView = new St.ScrollView({
+                style: 'max-height: 350px;',
+                hscrollbar_policy: St.PolicyType.NEVER,
+                vscrollbar_policy: St.PolicyType.AUTOMATIC,
+            });
+
+            const scrollContent = new St.BoxLayout({ vertical: true });
+
+            //creating live and finished matches containers
+            this.liveCardsContainer = new St.BoxLayout({ vertical: true });
+            this.finishedCardsContainer = new St.BoxLayout({ vertical: true, visible: false });
+
+            scrollContent.add_child(this.liveCardsContainer);
+            scrollContent.add_child(this.finishedCardsContainer);
+
+            scrollView.set_child(scrollContent);
+            this.mainPage.add_child(scrollView);
+
             this._buildDetailsSection();
             this._connectEvents();
             this._loadMatches();
@@ -127,14 +144,31 @@ const Indicator = GObject.registerClass(
                 style: 'background-color: rgba(255, 255, 255, 0.15); height: 1px; margin: 10px 0;'
             });
 
-            const subtitle = new St.Label({
-                text: 'Live matches right now:',
-                style_class: 'menu_subtitle_text',
+            const tabsContainer = new St.BoxLayout({});
+
+            this.liveTabButton = new St.Button({
+                label: 'Live matches',
+                reactive: true,
+                can_focus: true,
+                x_expand: true,
+                style_class: 'tab_button tab_button_active',
             });
+
+            this.finishedTabButton = new St.Button({
+                label: 'Finished matches',
+                reactive: true,
+                can_focus: true,
+                x_expand: true,
+                style_class: 'tab_button',
+            });
+
+            tabsContainer.add_child(this.liveTabButton);
+            tabsContainer.add_child(this.finishedTabButton);
 
             this.mainPage.add_child(headerContainer);
             this.mainPage.add_child(divisor);
-            this.mainPage.add_child(subtitle)
+            this.mainPage.add_child(tabsContainer);
+
 
             const matchTitleContainer = new St.BoxLayout({
                 style: 'padding: 5px',
@@ -268,9 +302,9 @@ const Indicator = GObject.registerClass(
                     const maps = parseMatchMaps(match);
 
                     if (maps) {
-                        this.map1Detail.text = maps[0]?.map_name;
-                        this.map2Detail.text = maps[1]?.map_name;
-                        this.map3Detail.text = maps[2]?.map_name;
+                        this.map1Detail.text = maps[0]?.map_name || '-';
+                        this.map2Detail.text = maps[1]?.map_name || '-';
+                        this.map3Detail.text = maps[2]?.map_name || '-';
                     }
 
                     this.tournamentNameDetail.text = tournamentName;
@@ -473,6 +507,31 @@ const Indicator = GObject.registerClass(
                     return GLib.SOURCE_REMOVE;
                 });
             });
+
+            this.liveTabButton.connect('clicked', () => {
+                GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+                    this.liveTabButton.add_style_class_name('tab_button_active');
+                    this.finishedTabButton.remove_style_class_name('tab_button_active');
+
+                    this.liveCardsContainer.visible = true;
+                    this.finishedCardsContainer.visible = false;
+                    return GLib.SOURCE_REMOVE;
+                });
+            });
+
+            this.finishedTabButton.connect('clicked', () => {
+                GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+                    this.finishedTabButton.add_style_class_name('tab_button_active');
+                    this.liveTabButton.remove_style_class_name('tab_button_active');
+
+                    this.liveCardsContainer.visible = false;
+                    this.finishedCardsContainer.visible = true;
+
+                    this._loadFinishedMatches();
+
+                    return GLib.SOURCE_REMOVE;
+                });
+            });
         }
 
         async _loadMatches() {
@@ -480,7 +539,7 @@ const Indicator = GObject.registerClass(
                 //making the api call
                 const matchesJson = await api.fetchMatches();
 
-                this.cardsContainer.destroy_all_children();
+                this.liveCardsContainer.destroy_all_children();
 
                 if (matchesJson && matchesJson.data && matchesJson.data.length > 0) {
                     this.textoStatus.text = 'Live Matches';
@@ -488,13 +547,13 @@ const Indicator = GObject.registerClass(
                     //gathering each match from the data field
                     matchesJson.data.forEach((match, index) => {
                         const matchCard = this._createMatchCard(match, matchesJson);
-                        this.cardsContainer.add_child(matchCard);
+                        this.liveCardsContainer.add_child(matchCard);
 
                         if (index < matchesJson.data.length - 1) {
                             const cardDivisor = new St.Widget({
                                 style: 'background-color: rgba(255, 255, 255, 0.1); height: 1px; margin: 8px 0;'
                             });
-                            this.cardsContainer.add_child(cardDivisor);
+                            this.liveCardsContainer.add_child(cardDivisor);
                         }
                     });
                 } else {
@@ -505,6 +564,36 @@ const Indicator = GObject.registerClass(
                 log(`Erro ao carregar partidas no painel: ${e.message}`);
                 this.textoStatus.text = 'Error';
                 this.menuTitleLabel.text = 'Failed to fetch API.';
+            }
+        }
+
+        async _loadFinishedMatches() {
+            try {
+                const finishedMatchesJson = await api.fetchFinishedMatches();
+
+                this.finishedCardsContainer.destroy_all_children();
+
+                if (finishedMatchesJson && finishedMatchesJson.data) {
+                    const fullList = Array.isArray(finishedMatchesJson.data)
+                        ? finishedMatchesJson.data
+                        : Object.values(finishedMatchesJson.data.tiers || {}).flatMap(tier => tier.matches || []);
+
+                    const matchesList = fullList.slice(0, 5);
+
+                    matchesList.forEach((match, index) => {
+                        const matchCard = this._createMatchCard(match, finishedMatchesJson);
+                        this.finishedCardsContainer.add_child(matchCard);
+
+                        if (index < matchesList.length - 1) {
+                            const cardDivisor = new St.Widget({
+                                style: 'background-color: rgba(255, 255, 255, 0.1); height: 1px; margin: 8px 0;'
+                            });
+                            this.finishedCardsContainer.add_child(cardDivisor);
+                        }
+                    });
+                }
+            } catch (e) {
+                log(`Error fetching finished matches: ${e.message}`);
             }
         }
     });
