@@ -206,7 +206,7 @@ const Indicator = GObject.registerClass(
                     : `background-image: url("${placeholderPath}");`,
                 y_align: Clutter.ActorAlign.CENTER,
             });
-            
+
             const team1ScoreLabel = new St.Label({
                 text: String(team1ScoreText),
                 style_class: 'score',
@@ -431,6 +431,10 @@ const Indicator = GObject.registerClass(
                 x_align: Clutter.ActorAlign.CENTER,
             });
 
+            const spacer = new St.Widget({
+                x_expand: true,
+            });
+
             this.team1ContainerDetail.add_child(this.team1IconDetail);
             this.team1ContainerDetail.add_child(this.team1NameDetail);
             this.team1ContainerDetail.add_child(this.team1ScoreDetail);
@@ -439,6 +443,7 @@ const Indicator = GObject.registerClass(
             this.team2ContainerDetail.add_child(this.team2ScoreDetail);
 
             this.teamsLogosDetailContainer.add_child(this.team1ContainerDetail);
+            this.teamsLogosDetailContainer.add_child(spacer);
             this.teamsLogosDetailContainer.add_child(this.team2ContainerDetail);
 
 
@@ -479,7 +484,6 @@ const Indicator = GObject.registerClass(
 
                 if (matchesJson && matchesJson.data && matchesJson.data.length > 0) {
                     this.textoStatus.text = 'Live Matches';
-                    this.menuTitleLabel.text = 'Live CS2 matches right now:';
 
                     //gathering each match from the data field
                     matchesJson.data.forEach((match, index) => {
