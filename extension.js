@@ -71,20 +71,23 @@ const Indicator = GObject.registerClass(
 
             this._buildDetailsSection();
             this._connectEvents();
-            this._loadMatches();
 
-            //updating score every minute
+
+            this._showLoadingState(this.liveCardsContainer, 'Loading live matches...');
+            this._showLoadingState(this.finishedCardsContainer, 'Loading finished matches...');
+
+            this._loadMatches();
+            this._loadFinishedMatches();
+
             this._timeoutId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => {
                 this._loadMatches();
+
+                if (this.finishedCardsContainer.visible) {
+                    this._loadFinishedMatches();
+                }
                 return GLib.SOURCE_CONTINUE;
             });
 
-            this.connect('destroy', () => {
-                if (this._timeoutId) {
-                    GLib.Source.remove(this._timeoutId);
-                    this._timeoutId = null;
-                }
-            });
         }
 
         _buildPanelIndicator() {
@@ -527,8 +530,6 @@ const Indicator = GObject.registerClass(
                     this.liveCardsContainer.visible = false;
                     this.finishedCardsContainer.visible = true;
 
-                    this._loadFinishedMatches();
-
                     return GLib.SOURCE_REMOVE;
                 });
             });
@@ -596,6 +597,19 @@ const Indicator = GObject.registerClass(
                 log(`Error fetching finished matches: ${e.message}`);
             }
         }
+
+        _showLoadingState(container, messageText) {
+            container.destroy_all_children();
+            const loadingLabel = new St.Label({
+                text: messageText || 'Carregando partidas...',
+                style_class: 'loading_label',
+                x_align: Clutter.ActorAlign.CENTER,
+                y_align: Clutter.ActorAlign.CENTER,
+                style: 'padding: 20px; color: #888; font-style: italic;',
+            });
+            container.add_child(loadingLabel);
+        }
+
     });
 
 export default class IndicatorExampleExtension extends Extension {
