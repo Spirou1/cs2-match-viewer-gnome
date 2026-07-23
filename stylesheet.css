@@ -16,17 +16,17 @@
 .team_name {
     font-size: 15px;
     color: white;
+    max-width: 180px;
     padding: 2px 4px;
 }
 
 .date_text {
     font-size: 14px;
-    color: #888;
-    margin-left: 30px;
+    color: #aaa;
 }
 
 .score {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: bold;
     color: #4caf50;
     padding: 2px 6px;
@@ -183,4 +183,19 @@
 .tab_button_active {
     color: #ffffff;
     border-bottom: 2px solid #3584e4;
+}
+
+.no_games_label {
+    padding: 35px;
+    color: #888;
+    font-style: italic;
+    font-size: 22px;
+}
+
+.small_tournament_icon {
+    width: 28px;
+    height: 28px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
 }

@@ -19,8 +19,8 @@
 import GObject from 'gi://GObject';
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
-import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import Pango from 'gi://Pango';
 
 import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
@@ -28,7 +28,7 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as api from './api.js';
-import { parseMatchMaps } from './utils.js';
+import { parseMatchMaps, getCachedImageUri } from './utils.js';
 
 const Indicator = GObject.registerClass(
     class Indicator extends PanelMenu.Button {
@@ -107,7 +107,7 @@ const Indicator = GObject.registerClass(
         }
 
         _buildMenuBase() {
-            this.menu.actor.style = 'width: 480px;';
+            this.menu.actor.style = 'width: 600px;';
             this.mainMenuContainer = new PopupMenu.PopupBaseMenuItem({
                 reactive: false,
                 activate: false,
@@ -174,34 +174,49 @@ const Indicator = GObject.registerClass(
 
 
             const matchTitleContainer = new St.BoxLayout({
-                style: 'padding: 5px',
+                style: 'padding: 5px 10px;',
             });
             const teamTitle = new St.Label({
-                text: 'Teams: ',
+                text: 'Teams',
                 style_class: 'team_title',
+                style: 'width: 480px; font-weight: bold; color: #888;',
             });
-            const spacer = new St.Widget({
+            const eventTitle = new St.Label({
+                text: 'Event',
+                style_class: 'event_title',
+                style: 'width: 80px; font-weight: bold; color: #888;',
+                x_align: Clutter.ActorAlign.CENTER,
+            });
+            const dateTitle = new St.Label({
+                text: 'Date',
+                style_class: 'date_title',
+                style: 'font-weight: bold; color: #888;',
                 x_expand: true,
+                x_align: Clutter.ActorAlign.END,
             });
 
-            const dateTitle = new St.Label({
-                text: 'Date: ',
-                style_class: 'date_title',
-            });
             matchTitleContainer.add_child(teamTitle);
-            matchTitleContainer.add_child(spacer);
+            matchTitleContainer.add_child(eventTitle);
             matchTitleContainer.add_child(dateTitle);
             this.mainPage.add_child(matchTitleContainer);
         }
 
-        _createMatchCard(match, matchesJson) {
-            const iconFile = this._extension.dir.get_child('assets').get_child('cs-logo.png');
+        async _createMatchCard(match, matchesJson) {
+            const iconFile = this._extension.dir.get_child('assets').get_child('default-team-logo.png');
             const placeholderPath = iconFile.get_path();
 
             const team1name = matchesJson.included?.teams?.[match.team1]?.name || 'Unknown Team 1';
             const team2name = matchesJson.included?.teams?.[match.team2]?.name || 'Unknown Team 2';
             const team1Logo = matchesJson.included?.teams?.[match.team1]?.image_versions?.['50x50'] || null;
             const team2Logo = matchesJson.included?.teams?.[match.team2]?.image_versions?.['50x50'] || null;
+
+            const tournamentLogoSmall = matchesJson.included?.tournaments?.[match.tournament]?.image_versions?.['50x50'] || null;
+
+            const [team1LocalUri, team2LocalUri, smallTournamentLogoLocalUri] = await Promise.all([
+                getCachedImageUri(team1Logo),
+                getCachedImageUri(team2Logo),
+                getCachedImageUri(tournamentLogoSmall),
+            ]);
 
             const team1RoundScore = match.team1_last_game_score ?? '-';
             const team2RoundScore = match.team2_last_game_score ?? '-';
@@ -236,10 +251,12 @@ const Indicator = GObject.registerClass(
                 style_class: 'team_name',
                 y_align: Clutter.ActorAlign.CENTER,
             });
+            team1Label.clutter_text.ellipsize = Pango.EllipsizeMode.END;
+
             const team1Icon = new St.Widget({
                 style_class: 'team_icon',
-                style: team1Logo
-                    ? `background-image: url("${team1Logo}");`
+                style: team1LocalUri
+                    ? `background-image: url("${team1LocalUri}");`
                     : `background-image: url("${placeholderPath}");`,
                 y_align: Clutter.ActorAlign.CENTER,
             });
@@ -254,10 +271,12 @@ const Indicator = GObject.registerClass(
                 style_class: 'team_name',
                 y_align: Clutter.ActorAlign.CENTER,
             });
+            team2Label.clutter_text.ellipsize = Pango.EllipsizeMode.END;
+
             const team2Icon = new St.Widget({
                 style_class: 'team_icon',
-                style: team2Logo
-                    ? `background-image: url("${team2Logo}");`
+                style: team2LocalUri
+                    ? `background-image: url("${team2LocalUri}");`
                     : `background-image: url("${placeholderPath}");`,
                 y_align: Clutter.ActorAlign.CENTER,
             });
@@ -267,47 +286,103 @@ const Indicator = GObject.registerClass(
                 style_class: 'score',
                 y_align: Clutter.ActorAlign.CENTER,
             });
-            const dateLabel = new St.Label({
-                text: date,
-                style_class: 'date_text',
-                y_align: Clutter.ActorAlign.CENTER,
-            });
+
             const scoreDivisor = new St.Label({
                 text: '  X  ',
                 y_align: Clutter.ActorAlign.CENTER,
             });
 
-            const spacer = new St.Widget({
-                x_expand: true,
+            const teamsContainer = new St.BoxLayout({
+                style: 'width: 480px;',
+                y_align: Clutter.ActorAlign.CENTER,
+            })
+
+            teamsContainer.add_child(team1Icon);
+            teamsContainer.add_child(team1Label);
+            teamsContainer.add_child(team1ScoreLabel);
+            teamsContainer.add_child(scoreDivisor);
+            teamsContainer.add_child(team2ScoreLabel);
+            teamsContainer.add_child(team2Icon);
+            teamsContainer.add_child(team2Label);
+
+            const dateLabel = new St.Label({
+                text: date,
+                style_class: 'date_text',
+                y_align: Clutter.ActorAlign.CENTER,
             });
 
-            matchBoxLayout.add_child(team1Icon);
-            matchBoxLayout.add_child(team1Label);
-            matchBoxLayout.add_child(team1ScoreLabel);
-            matchBoxLayout.add_child(scoreDivisor);
-            matchBoxLayout.add_child(team2ScoreLabel);
-            matchBoxLayout.add_child(team2Icon);
-            matchBoxLayout.add_child(team2Label);
-            matchBoxLayout.add_child(spacer);
-            matchBoxLayout.add_child(dateLabel);
+            const dateContainer = new St.BoxLayout({
+                x_expand: true,
+                x_align: Clutter.ActorAlign.END,
+                y_align: Clutter.ActorAlign.CENTER,
+            })
 
-            //on click to show details page
+            dateContainer.add_child(dateLabel);
+
+            const smallTournamentIcon = new St.Widget({
+                style_class: 'small_tournament_icon',
+                style: smallTournamentLogoLocalUri
+                    ? `background-image: url("${smallTournamentLogoLocalUri}");`
+                    : `background-image: url("${placeholderPath}");`,
+                y_align: Clutter.ActorAlign.CENTER,
+            });
+
+            const tournamentContainer = new St.BoxLayout({
+                style: 'width: 80px; padding-left: 10px;',
+                x_align: Clutter.ActorAlign.CENTER,
+                y_align: Clutter.ActorAlign.CENTER,
+            });
+            tournamentContainer.add_child(smallTournamentIcon);
+
+            matchBoxLayout.add_child(teamsContainer);
+            matchBoxLayout.add_child(tournamentContainer);
+            matchBoxLayout.add_child(dateContainer);
+
             matchButton.connect('clicked', () => {
-                GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-                    const tournamentId = match.tournament;
-                    const tournamentName = matchesJson.included?.tournaments?.[tournamentId]?.name || 'Unknown Tournament';
-                    const tournamentLogo = matchesJson.included?.tournaments?.[match.tournament]?.image_url || null;
-                    const team1LogoDetail = matchesJson.included?.teams?.[match.team1]?.image_url || null;
-                    const team2LogoDetail = matchesJson.included?.teams?.[match.team2]?.image_url || null;
+                const tournamentId = match.tournament;
+                const tournamentName = matchesJson.included?.tournaments?.[tournamentId]?.name || 'Unknown Tournament';
+                const tournamentLogo = matchesJson.included?.tournaments?.[match.tournament]?.image_url || null;
+                const team1LogoDetail = matchesJson.included?.teams?.[match.team1]?.image_url || null;
+                const team2LogoDetail = matchesJson.included?.teams?.[match.team2]?.image_url || null;
 
-                    //maps array
-                    // log(`Mapa ${game.number}: ${game.map_name} - Status: ${game.status}`);
+                Promise.all([
+                    getCachedImageUri(tournamentLogo),
+                    getCachedImageUri(team1LogoDetail),
+                    getCachedImageUri(team2LogoDetail),
+                ]).then(([tLogoUri, t1LogoUri, t2LogoUri]) => {
+                    this.mapsContainer.destroy_all_children();
+
+                    const boType = match.bo_type ? `BO${match.bo_type}` : 'Maps';
+                    const mapContainerTitle = new St.Label({
+                        text: `Maps (${boType}):`,
+                        style_class: 'maps_container_title',
+                        x_align: Clutter.ActorAlign.CENTER,
+                        style: 'font-weight: bold; margin-bottom: 8px;',
+                    });
+                    this.mapsContainer.add_child(mapContainerTitle);
+
                     const maps = parseMatchMaps(match);
 
-                    if (maps) {
-                        this.map1Detail.text = maps[0]?.map_name || '-';
-                        this.map2Detail.text = maps[1]?.map_name || '-';
-                        this.map3Detail.text = maps[2]?.map_name || '-';
+                    if (maps && maps.length > 0) {
+                        maps.forEach((game) => {
+                            const mapName = game.map_name ? game.map_name.replace('de_', '').toUpperCase() : 'TBD';
+                            const statusText = game.status === 'finished' ? ' (Finished)' : (game.status === 'current' ? ' (Current)' : '');
+
+                            const mapLabel = new St.Label({
+                                text: `Map ${game.number}: ${mapName}${statusText}`,
+                                style_class: 'map_name_detail',
+                                x_align: Clutter.ActorAlign.CENTER,
+                            });
+
+                            this.mapsContainer.add_child(mapLabel);
+                        });
+                    } else {
+                        const noMapsLabel = new St.Label({
+                            text: 'No maps defined yet',
+                            style_class: 'map_name_detail',
+                            x_align: Clutter.ActorAlign.CENTER,
+                        });
+                        this.mapsContainer.add_child(noMapsLabel);
                     }
 
                     this.tournamentNameDetail.text = tournamentName;
@@ -316,30 +391,12 @@ const Indicator = GObject.registerClass(
                     this.team1ScoreDetail.text = String(team1ScoreText);
                     this.team2ScoreDetail.text = String(team2ScoreText);
 
-                    const iconFile = this._extension.dir.get_child('assets').get_child('cs-logo.png');
-                    const placeholderPath = iconFile.get_path();
-
-                    if (tournamentLogo) {
-                        this.tournamentLogo.style = `background-image: url("${tournamentLogo}");`;
-                    } else {
-                        this.tournamentLogo.style = `background-image: url("${placeholderPath}");`;
-                    }
-
-                    if (team1LogoDetail) {
-                        this.team1IconDetail.style = `background-image: url("${team1LogoDetail}");`;
-                    } else {
-                        this.team1IconDetail.style = `background-image: url("${placeholderPath}");`;
-                    }
-
-                    if (team2LogoDetail) {
-                        this.team2IconDetail.style = `background-image: url("${team2LogoDetail}");`;
-                    } else {
-                        this.team2IconDetail.style = `background-image: url("${placeholderPath}");`;
-                    }
+                    this.tournamentLogo.style = `background-image: url("${tLogoUri || placeholderPath}");`;
+                    this.team1IconDetail.style = `background-image: url("${t1LogoUri || placeholderPath}");`;
+                    this.team2IconDetail.style = `background-image: url("${t2LogoUri || placeholderPath}");`;
 
                     this.mainPage.visible = false;
                     this.detailsPage.visible = true;
-                    return GLib.SOURCE_REMOVE;
                 });
             });
 
@@ -444,29 +501,6 @@ const Indicator = GObject.registerClass(
                 style_class: 'maps_container',
             });
 
-            const mapContainerTitle = new St.Label({
-                text: 'Maps:',
-                style_class: 'maps_container_title',
-                x_align: Clutter.ActorAlign.CENTER,
-            });
-
-            this.map1Detail = new St.Label({
-                text: 'TBD',
-                style_class: 'map_name_detail',
-                x_align: Clutter.ActorAlign.CENTER,
-            });
-
-            this.map2Detail = new St.Label({
-                text: 'TBD',
-                style_class: 'map_name_detail',
-                x_align: Clutter.ActorAlign.CENTER,
-            });
-
-            this.map3Detail = new St.Label({
-                text: 'TBD',
-                style_class: 'map_name_detail',
-                x_align: Clutter.ActorAlign.CENTER,
-            });
 
             const spacer = new St.Widget({
                 x_expand: true,
@@ -490,11 +524,6 @@ const Indicator = GObject.registerClass(
             this.tournamentLogoLabelContainer.add_child(this.tournamentLogo);
             this.tournamentLogoLabelContainer.add_child(this.tournamentNameDetail);
 
-            this.mapsContainer.add_child(mapContainerTitle);
-            this.mapsContainer.add_child(this.map1Detail);
-            this.mapsContainer.add_child(this.map2Detail);
-            this.mapsContainer.add_child(this.map3Detail);
-
             this.detailsPage.add_child(this.backButtonLabelContainer);
             this.detailsPage.add_child(divisor);
             this.detailsPage.add_child(this.tournamentLogoLabelContainer);
@@ -504,40 +533,29 @@ const Indicator = GObject.registerClass(
 
         _connectEvents() {
             this.backButton.connect('clicked', () => {
-                GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-                    this.mainPage.visible = true;
-                    this.detailsPage.visible = false;
-                    return GLib.SOURCE_REMOVE;
-                });
+                this.mainPage.visible = true;
+                this.detailsPage.visible = false;
             });
 
             this.liveTabButton.connect('clicked', () => {
-                GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-                    this.liveTabButton.add_style_class_name('tab_button_active');
-                    this.finishedTabButton.remove_style_class_name('tab_button_active');
+                this.liveTabButton.add_style_class_name('tab_button_active');
+                this.finishedTabButton.remove_style_class_name('tab_button_active');
 
-                    this.liveCardsContainer.visible = true;
-                    this.finishedCardsContainer.visible = false;
-                    return GLib.SOURCE_REMOVE;
-                });
+                this.liveCardsContainer.visible = true;
+                this.finishedCardsContainer.visible = false;
             });
 
             this.finishedTabButton.connect('clicked', () => {
-                GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-                    this.finishedTabButton.add_style_class_name('tab_button_active');
-                    this.liveTabButton.remove_style_class_name('tab_button_active');
+                this.finishedTabButton.add_style_class_name('tab_button_active');
+                this.liveTabButton.remove_style_class_name('tab_button_active');
 
-                    this.liveCardsContainer.visible = false;
-                    this.finishedCardsContainer.visible = true;
-
-                    return GLib.SOURCE_REMOVE;
-                });
+                this.liveCardsContainer.visible = false;
+                this.finishedCardsContainer.visible = true;
             });
         }
 
         async _loadMatches() {
             try {
-                //making the api call
                 const matchesJson = await api.fetchMatches();
 
                 this.liveCardsContainer.destroy_all_children();
@@ -545,9 +563,10 @@ const Indicator = GObject.registerClass(
                 if (matchesJson && matchesJson.data && matchesJson.data.length > 0) {
                     this.textoStatus.text = 'Live Matches';
 
-                    //gathering each match from the data field
-                    matchesJson.data.forEach((match, index) => {
-                        const matchCard = this._createMatchCard(match, matchesJson);
+                    //iterating through each match and creating the match cards
+                    for (let index = 0; index < matchesJson.data.length; index++) {
+                        const match = matchesJson.data[index];
+                        const matchCard = await this._createMatchCard(match, matchesJson);
                         this.liveCardsContainer.add_child(matchCard);
 
                         if (index < matchesJson.data.length - 1) {
@@ -556,13 +575,22 @@ const Indicator = GObject.registerClass(
                             });
                             this.liveCardsContainer.add_child(cardDivisor);
                         }
-                    });
+                    }
                 } else {
+
+                    const noGamesLabel = new St.Label({
+                        text: 'No games being played right now...',
+                        style_class: 'no_games_label',
+                        x_align: Clutter.ActorAlign.CENTER,
+                        y_align: Clutter.ActorAlign.CENTER,
+                    });
+
+                    this.liveCardsContainer.add_child(noGamesLabel);
+
                     this.textoStatus.text = 'No games';
-                    this.menuTitleLabel.text = 'There are no games right now...';
                 }
             } catch (e) {
-                log(`Erro ao carregar partidas no painel: ${e.message}`);
+                log(`Failed to load matches: ${e.message}`);
                 this.textoStatus.text = 'Error';
                 this.menuTitleLabel.text = 'Failed to fetch API.';
             }
@@ -579,10 +607,11 @@ const Indicator = GObject.registerClass(
                         ? finishedMatchesJson.data
                         : Object.values(finishedMatchesJson.data.tiers || {}).flatMap(tier => tier.matches || []);
 
-                    const matchesList = fullList.slice(0, 5);
+                    const matchesList = fullList;
 
-                    matchesList.forEach((match, index) => {
-                        const matchCard = this._createMatchCard(match, finishedMatchesJson);
+                    for (let index = 0; index < matchesList.length; index++) {
+                        const match = matchesList[index];
+                        const matchCard = await this._createMatchCard(match, finishedMatchesJson);
                         this.finishedCardsContainer.add_child(matchCard);
 
                         if (index < matchesList.length - 1) {
@@ -591,7 +620,7 @@ const Indicator = GObject.registerClass(
                             });
                             this.finishedCardsContainer.add_child(cardDivisor);
                         }
-                    });
+                    }
                 }
             } catch (e) {
                 log(`Error fetching finished matches: ${e.message}`);
@@ -601,7 +630,7 @@ const Indicator = GObject.registerClass(
         _showLoadingState(container, messageText) {
             container.destroy_all_children();
             const loadingLabel = new St.Label({
-                text: messageText || 'Carregando partidas...',
+                text: messageText || 'Loading matches...',
                 style_class: 'loading_label',
                 x_align: Clutter.ActorAlign.CENTER,
                 y_align: Clutter.ActorAlign.CENTER,
