@@ -143,11 +143,19 @@ const Indicator = GObject.registerClass(
             headerContainer.add_child(headerIcon);
             headerContainer.add_child(this.menuTitleLabel);
 
-            const divisor = new St.Widget({
-                style: 'background-color: rgba(255, 255, 255, 0.15); height: 1px; margin: 10px 0;'
+            const divisor1 = new St.Widget({
+                style: 'background-color: rgba(255, 255, 255, 0.15); height: 1px; margin: 5px 0;'
             });
 
-            const tabsContainer = new St.BoxLayout({});
+            const divisor2 = new St.Widget({
+                style: 'background-color: rgba(255, 255, 255, 0.15); height: 0.5px; margin: 0 60px;',
+                x_expand: true,
+            });
+
+            const tabsContainer = new St.BoxLayout({
+                style_class: 'tabs_container',
+                style: 'spacing: 10px;'
+            });
 
             this.liveTabButton = new St.Button({
                 label: 'Live matches',
@@ -169,12 +177,13 @@ const Indicator = GObject.registerClass(
             tabsContainer.add_child(this.finishedTabButton);
 
             this.mainPage.add_child(headerContainer);
-            this.mainPage.add_child(divisor);
+            this.mainPage.add_child(divisor1);
             this.mainPage.add_child(tabsContainer);
+            this.mainPage.add_child(divisor2)
 
 
             const matchTitleContainer = new St.BoxLayout({
-                style: 'padding: 5px 10px;',
+                style: 'padding: 5px 10px; margin-top: 5px;',
             });
             const teamTitle = new St.Label({
                 text: 'Teams',
@@ -228,19 +237,29 @@ const Indicator = GObject.registerClass(
 
             let team1Class = 'score_tie';
             let team2Class = 'score_tie';
+            let team1DetailClass = 'team_score_detail_tie';
+            let team2DetailClass = 'team_score_detail_tie'
 
             if (team1MapScore > team2MapScore) {
                 team1Class = 'score_win';
+                team1DetailClass = 'team_score_detail_win';
                 team2Class = 'score_lose';
+                team2DetailClass = 'team_score_detail_lose';
             } else if (team1MapScore < team2MapScore) {
                 team1Class = 'score_lose';
+                team1DetailClass = 'team_score_detail_lose';
                 team2Class = 'score_win';
+                team2DetailClass = 'team_score_detail_win';
             } else if (team1RoundScore > team2RoundScore) {
                 team1Class = 'score_win';
+                team1DetailClass = 'team_score_detail_win';
                 team2Class = 'score_lose';
+                team2DetailClass = 'team_score_detail_lose';
             } else if (team1RoundScore < team2RoundScore) {
                 team1Class = 'score_lose';
+                team1DetailClass = 'team_score_detail_lose';
                 team2Class = 'score_win';
+                team2DetailClass = 'team_score_detail_win';
             }
 
             const dateObj = new Date(match.start_date);
@@ -408,6 +427,9 @@ const Indicator = GObject.registerClass(
                     this.team1ScoreDetail.text = String(team1ScoreText);
                     this.team2ScoreDetail.text = String(team2ScoreText);
 
+                    this.team1ScoreDetail.style_class = `team_score_detail ${team1DetailClass}`;
+                    this.team2ScoreDetail.style_class = `team_score_detail ${team2DetailClass}`;
+
                     this.tournamentLogo.style = `background-image: url("${tLogoUri || placeholderPath}");`;
                     this.team1IconDetail.style = `background-image: url("${t1LogoUri || placeholderPath}");`;
                     this.team2IconDetail.style = `background-image: url("${t2LogoUri || placeholderPath}");`;
@@ -486,7 +508,7 @@ const Indicator = GObject.registerClass(
 
             this.team1ScoreDetail = new St.Label({
                 text: '-',
-                style_class: 'team_score_detail',
+                style_class: `team_score_detail ${this.team1DetailClass}`,
                 x_align: Clutter.ActorAlign.CENTER,
             });
 
@@ -508,7 +530,7 @@ const Indicator = GObject.registerClass(
 
             this.team2ScoreDetail = new St.Label({
                 text: '-',
-                style_class: 'team_score_detail',
+                style_class: `team_score_detail ${this.team2ScoreDetail}`,
                 x_align: Clutter.ActorAlign.CENTER,
             });
 
