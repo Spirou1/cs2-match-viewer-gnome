@@ -28,7 +28,7 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as api from './api.js';
-import { parseMatchMaps, getCachedImageUri } from './utils.js';
+import { parseMatchMaps, getCachedImageUri, groupMatchesByTournament } from './utils.js';
 
 const Indicator = GObject.registerClass(
     class Indicator extends PanelMenu.Button {
@@ -593,6 +593,63 @@ const Indicator = GObject.registerClass(
             });
         }
 
+        async _renderMatchesGrouped(container, matchesList, matchesJson) {
+            container.destroy_all_children();
+
+            const grouped = groupMatchesByTournament(matchesList);
+
+            const tierPriority = { 's': 1, 'a': 2, 'b': 3, 'c': 4, 'd': 5 };
+
+            const sortedGrouped = Object.entries(grouped).sort(([tIdA, matchesA], [tIdB, matchesB]) => {
+                const tierA = (matchesJson.included?.tournaments?.[tIdA]?.tier || matchesA[0]?.tier || 'z').toLowerCase();
+                const tierB = (matchesJson.included?.tournaments?.[tIdB]?.tier || matchesB[0]?.tier || 'z').toLowerCase();
+                return (tierPriority[tierA] ?? 99) - (tierPriority[tierB] ?? 99);
+            });
+
+            for (const [tournamentId, matches] of sortedGrouped) {
+                const tournament = matchesJson.included?.tournaments?.[tournamentId];
+                const tournamentName = tournament?.name || 'Unknown Tournament';
+                const tournamentLogo = tournament?.image_versions?.['50x50'] || tournament?.image_url || null;
+
+                const logoUri = tournamentLogo ? await getCachedImageUri(tournamentLogo) : null;
+
+                const headerBox = new St.BoxLayout({
+                    style: 'padding: 8px 5px 4px 5px; margin-top: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);',
+                    y_align: Clutter.ActorAlign.CENTER,
+                });
+
+                if (logoUri) {
+                    const logoWidget = new St.Widget({
+                        style_class: 'small_tournament_icon',
+                        style: `background-image: url("${logoUri}"); margin-right: 8px; width: 22px; height: 22px;`,
+                        y_align: Clutter.ActorAlign.CENTER,
+                    });
+                    headerBox.add_child(logoWidget);
+                }
+
+                const titleLabel = new St.Label({
+                    text: tournamentName,
+                    style: 'font-weight: bold; font-size: 13px; color: #d98518;',
+                    y_align: Clutter.ActorAlign.CENTER,
+                });
+                headerBox.add_child(titleLabel);
+
+                container.add_child(headerBox);
+
+                for (let index = 0; index < matches.length; index++) {
+                    const matchCard = await this._createMatchCard(matches[index], matchesJson);
+                    container.add_child(matchCard);
+
+                    if (index < matches.length - 1) {
+                        const cardDivisor = new St.Widget({
+                            style: 'background-color: rgba(255, 255, 255, 0.05); height: 1px; margin: 4px 0;'
+                        });
+                        container.add_child(cardDivisor);
+                    }
+                }
+            }
+        }
+
         async _loadMatches() {
             try {
                 const matchesJson = await api.fetchMatches();
@@ -602,19 +659,7 @@ const Indicator = GObject.registerClass(
                 if (matchesJson && matchesJson.data && matchesJson.data.length > 0) {
                     this.textoStatus.text = 'Live Matches';
 
-                    //iterating through each match and creating the match cards
-                    for (let index = 0; index < matchesJson.data.length; index++) {
-                        const match = matchesJson.data[index];
-                        const matchCard = await this._createMatchCard(match, matchesJson);
-                        this.liveCardsContainer.add_child(matchCard);
-
-                        if (index < matchesJson.data.length - 1) {
-                            const cardDivisor = new St.Widget({
-                                style: 'background-color: rgba(255, 255, 255, 0.1); height: 1px; margin: 8px 0;'
-                            });
-                            this.liveCardsContainer.add_child(cardDivisor);
-                        }
-                    }
+                    await this._renderMatchesGrouped(this.liveCardsContainer, matchesJson.data, matchesJson);
                 } else {
 
                     const noGamesLabel = new St.Label({
@@ -648,18 +693,7 @@ const Indicator = GObject.registerClass(
 
                     const matchesList = fullList;
 
-                    for (let index = 0; index < matchesList.length; index++) {
-                        const match = matchesList[index];
-                        const matchCard = await this._createMatchCard(match, finishedMatchesJson);
-                        this.finishedCardsContainer.add_child(matchCard);
-
-                        if (index < matchesList.length - 1) {
-                            const cardDivisor = new St.Widget({
-                                style: 'background-color: rgba(255, 255, 255, 0.1); height: 1px; margin: 8px 0;'
-                            });
-                            this.finishedCardsContainer.add_child(cardDivisor);
-                        }
-                    }
+                    await this._renderMatchesGrouped(this.finishedCardsContainer, matchesList, finishedMatchesJson);
                 }
             } catch (e) {
                 log(`Error fetching finished matches: ${e.message}`);
