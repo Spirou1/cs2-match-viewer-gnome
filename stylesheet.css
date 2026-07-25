@@ -199,3 +199,15 @@
     background-repeat: no-repeat;
     background-position: center;
 }
+
+.score_win {
+    color: #4caf50;
+}
+
+.score_lose {
+    color: #f44336;
+}
+
+.score_tie {
+    color: #888888;
+}

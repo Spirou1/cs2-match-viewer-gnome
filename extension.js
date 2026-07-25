@@ -179,12 +179,12 @@ const Indicator = GObject.registerClass(
             const teamTitle = new St.Label({
                 text: 'Teams',
                 style_class: 'team_title',
-                style: 'width: 480px; font-weight: bold; color: #888;',
+                style: 'width: 400px; font-weight: bold; color: #888;',
             });
             const eventTitle = new St.Label({
                 text: 'Event',
                 style_class: 'event_title',
-                style: 'width: 80px; font-weight: bold; color: #888;',
+                style: 'width: 60px; font-weight: bold; color: #888;',
                 x_align: Clutter.ActorAlign.CENTER,
             });
             const dateTitle = new St.Label({
@@ -224,7 +224,24 @@ const Indicator = GObject.registerClass(
             const team2MapScore = match.team2_score ?? '(-)';
 
             const team1ScoreText = `(${team1MapScore}) ${team1RoundScore}`;
-            const team2ScoreText = `(${team2MapScore}) ${team2RoundScore}`;
+            const team2ScoreText = `${team2RoundScore} (${team2MapScore})`;
+
+            let team1Class = 'score_tie';
+            let team2Class = 'score_tie';
+
+            if (team1MapScore > team2MapScore) {
+                team1Class = 'score_win';
+                team2Class = 'score_lose';
+            } else if (team1MapScore < team2MapScore) {
+                team1Class = 'score_lose';
+                team2Class = 'score_win';
+            } else if (team1RoundScore > team2RoundScore) {
+                team1Class = 'score_win';
+                team2Class = 'score_lose';
+            } else if (team1RoundScore < team2RoundScore) {
+                team1Class = 'score_lose';
+                team2Class = 'score_win';
+            }
 
             const dateObj = new Date(match.start_date);
             const day = String(dateObj.getUTCDate()).padStart(2, '0');
@@ -263,7 +280,7 @@ const Indicator = GObject.registerClass(
 
             const team1ScoreLabel = new St.Label({
                 text: String(team1ScoreText),
-                style_class: 'score',
+                style_class: `score ${team1Class}`,
                 y_align: Clutter.ActorAlign.CENTER,
             });
             const team2Label = new St.Label({
@@ -283,7 +300,7 @@ const Indicator = GObject.registerClass(
 
             const team2ScoreLabel = new St.Label({
                 text: String(team2ScoreText),
-                style_class: 'score',
+                style_class: `score ${team2Class}`,
                 y_align: Clutter.ActorAlign.CENTER,
             });
 
@@ -293,7 +310,7 @@ const Indicator = GObject.registerClass(
             });
 
             const teamsContainer = new St.BoxLayout({
-                style: 'width: 480px;',
+                style: 'width: 400px;',
                 y_align: Clutter.ActorAlign.CENTER,
             })
 
@@ -328,7 +345,7 @@ const Indicator = GObject.registerClass(
             });
 
             const tournamentContainer = new St.BoxLayout({
-                style: 'width: 80px; padding-left: 10px;',
+                style: 'width: 60px; padding-left: 10px;',
                 x_align: Clutter.ActorAlign.CENTER,
                 y_align: Clutter.ActorAlign.CENTER,
             });
