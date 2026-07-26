@@ -42,16 +42,3 @@ export async function getCachedImageUri(remoteUrl) {
         return null;
     }
 }
-
-export function groupMatchesByTournament(matchesList) {
-    if (!Array.isArray(matchesList)) return {};
-
-    return matchesList.reduce((acc, match) => {
-        const tournamentId = match.tournament || 'unknown';
-        if (!acc[tournamentId]) {
-            acc[tournamentId] = [];
-        }
-        acc[tournamentId].push(match);
-        return acc;
-    }, {});
-}

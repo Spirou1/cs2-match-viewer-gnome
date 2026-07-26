@@ -1,3 +1,5 @@
 node_modules/
-*.json
-!metadata.json
+jsons/
+.vscode/
+.DS_Store
+*.log

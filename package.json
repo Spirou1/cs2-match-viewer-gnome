@@ -1,0 +1,13 @@
+{
+  "name": "cs2-match-viewer",
+  "version": "1.0.0",
+  "description": "CS2 Live Matches Viewer GNOME Extension",
+  "main": "extension.js",
+  "type": "module",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@girs/gjs": "^4.1.0",
+    "@girs/gnome-shell": "^50.0.4",
+    "eslint": "^10.7.0"
+  }
+}

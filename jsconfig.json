@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "checkJs": false,
+    "types": [
+      "@girs/gjs",
+      "@girs/gnome-shell"
+    ]
+  },
+  "exclude": ["node_modules"]
+}
