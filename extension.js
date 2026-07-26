@@ -384,12 +384,21 @@ const Indicator = GObject.registerClass(
             matchBoxLayout.add_child(tournamentContainer);
             matchBoxLayout.add_child(formatContainer);
 
-            matchButton.connect('clicked', () => {
+            matchButton.connect('clicked', async () => {
                 const tournamentId = match.tournament;
                 const tournamentName = matchesJson.included?.tournaments?.[tournamentId]?.name || 'Unknown Tournament';
                 const tournamentLogo = matchesJson.included?.tournaments?.[match.tournament]?.image_url || null;
                 const team1LogoDetail = matchesJson.included?.teams?.[match.team1]?.image_url || null;
                 const team2LogoDetail = matchesJson.included?.teams?.[match.team2]?.image_url || null;
+
+                const matchSlug = match.slug;
+
+                const matchDetailJson = await this._loadMatchDetails(matchSlug);
+                
+                if (matchDetailJson) {
+                    const detailSlug = matchDetailJson.slug;
+                    this.testSlug.text = `${detailSlug}`;
+                }
 
                 Promise.all([
                     getCachedImageUri(tournamentLogo),
@@ -520,6 +529,10 @@ const Indicator = GObject.registerClass(
                 style_class: 'tournament_name_detail',
             });
 
+            this.testSlug = new St.Label({
+                text: '',
+            });
+
             this.matchDateDetail = new St.Label({
                 text: '',
                 style_class: 'match_date_detail',
@@ -602,6 +615,7 @@ const Indicator = GObject.registerClass(
 
             this.tournamentLogoLabelContainer.add_child(this.tournamentLogo);
             this.tournamentLogoLabelContainer.add_child(this.tournamentNameDetail);
+            this.tournamentLogoLabelContainer.add_child(this.testSlug);
             this.tournamentLogoLabelContainer.add_child(this.matchDateDetail);
 
             this.detailsPage.add_child(this.backButtonLabelContainer);
@@ -738,6 +752,21 @@ const Indicator = GObject.registerClass(
                 }
             } catch (e) {
                 log(`Error fetching finished matches: ${e.message}`);
+            }
+        }
+
+        async _loadMatchDetails(slug) {
+            try {
+                const matchDetailsJson = await api.fetchMatchDetails(slug);
+
+                if (matchDetailsJson) {
+                    this.textoStatus.text = 'DEU CERTO';
+                    return matchDetailsJson
+                } 
+                return null;
+            } catch (e) {
+                log(`Error fetching match details: ${e.message}`);
+                return null;
             }
         }
 
