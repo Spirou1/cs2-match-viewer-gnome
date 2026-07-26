@@ -24,8 +24,8 @@ import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-import * as load_matches from './match_controller.js';
-import * as build_menu from './build_menu.js';
+import * as load_matches from './src/match_controller.js';
+import * as build_menu from './src/build_menu.js';
 
 const Indicator = GObject.registerClass(
     class Indicator extends PanelMenu.Button {

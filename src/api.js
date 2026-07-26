@@ -17,7 +17,7 @@ export async function fetchMatches() {
         // const json = JSON.parse(responseText);
         // return json;
 
-        const file = Gio.File.new_for_uri(import.meta.url).get_parent().get_child('jsons').get_child('jsonExemplo.json');
+        const file = Gio.File.new_for_uri(import.meta.url).get_parent().get_parent().get_child('jsons').get_child('jsonExemplo.json');
         const [success, contents] = file.load_contents(null);
         if (success) {
             const decoder = new TextDecoder('utf-8');
