@@ -134,14 +134,26 @@ const Indicator = GObject.registerClass(
                 y_align: Clutter.ActorAlign.CENTER
             });
 
+            const titleBox = new St.BoxLayout({
+                vertical: true,
+                y_align: Clutter.ActorAlign.CENTER,
+            });
+
             this.menuTitleLabel = new St.Label({
                 text: 'CS2 Match Viewer',
                 style_class: 'menu_title_text',
-                y_align: Clutter.ActorAlign.CENTER
             });
 
+            this.menuSubtitleLabel = new St.Label({
+                text: 'Gnome shell extension that uses the bo3.gg api to fetch CS2 pro matches.',
+                style_class: 'menu_subtitle_text',
+            });
+
+            titleBox.add_child(this.menuTitleLabel);
+            titleBox.add_child(this.menuSubtitleLabel);
+
             headerContainer.add_child(headerIcon);
-            headerContainer.add_child(this.menuTitleLabel);
+            headerContainer.add_child(titleBox);
 
             const divisor1 = new St.Widget({
                 style: 'background-color: rgba(255, 255, 255, 0.15); height: 1px; margin: 5px 0;'
@@ -196,9 +208,9 @@ const Indicator = GObject.registerClass(
                 style: 'width: 60px; font-weight: bold; color: #888;',
                 x_align: Clutter.ActorAlign.CENTER,
             });
-            const dateTitle = new St.Label({
-                text: 'Date',
-                style_class: 'date_title',
+            const formatTitle = new St.Label({
+                text: 'Format / Tier',
+                style_class: 'format_title',
                 style: 'font-weight: bold; color: #888;',
                 x_expand: true,
                 x_align: Clutter.ActorAlign.END,
@@ -206,7 +218,7 @@ const Indicator = GObject.registerClass(
 
             matchTitleContainer.add_child(teamTitle);
             matchTitleContainer.add_child(eventTitle);
-            matchTitleContainer.add_child(dateTitle);
+            matchTitleContainer.add_child(formatTitle);
             this.mainPage.add_child(matchTitleContainer);
         }
 
@@ -262,11 +274,9 @@ const Indicator = GObject.registerClass(
                 team2DetailClass = 'team_score_detail_win';
             }
 
-            const dateObj = new Date(match.start_date);
-            const day = String(dateObj.getUTCDate()).padStart(2, '0');
-            const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
-            const year = dateObj.getUTCFullYear();
-            const date = `${day}-${month}-${year}`;
+            const boType = match.bo_type ? `BO${match.bo_type}` : 'BO1';
+            const tierRaw = (matchesJson.included?.tournaments?.[match.tournament]?.tier || match.tier || 'C').toUpperCase();
+            const formatText = `${boType} • Tier ${tierRaw}`;
 
             const matchButton = new St.Button({
                 reactive: true,
@@ -341,19 +351,19 @@ const Indicator = GObject.registerClass(
             teamsContainer.add_child(team2Icon);
             teamsContainer.add_child(team2Label);
 
-            const dateLabel = new St.Label({
-                text: date,
-                style_class: 'date_text',
+            const formatLabel = new St.Label({
+                text: formatText,
+                style_class: 'format_text',
                 y_align: Clutter.ActorAlign.CENTER,
             });
 
-            const dateContainer = new St.BoxLayout({
+            const formatContainer = new St.BoxLayout({
                 x_expand: true,
                 x_align: Clutter.ActorAlign.END,
                 y_align: Clutter.ActorAlign.CENTER,
-            })
+            });
 
-            dateContainer.add_child(dateLabel);
+            formatContainer.add_child(formatLabel);
 
             const smallTournamentIcon = new St.Widget({
                 style_class: 'small_tournament_icon',
@@ -372,7 +382,7 @@ const Indicator = GObject.registerClass(
 
             matchBoxLayout.add_child(teamsContainer);
             matchBoxLayout.add_child(tournamentContainer);
-            matchBoxLayout.add_child(dateContainer);
+            matchBoxLayout.add_child(formatContainer);
 
             matchButton.connect('clicked', () => {
                 const tournamentId = match.tournament;
@@ -402,10 +412,22 @@ const Indicator = GObject.registerClass(
                     if (maps && maps.length > 0) {
                         maps.forEach((game) => {
                             const mapName = game.map_name ? game.map_name.replace('de_', '').toUpperCase() : 'TBD';
-                            const statusText = game.status === 'finished' ? ' (Finished)' : (game.status === 'current' ? ' (Current)' : '');
+                            let scoreText = '';
+                            let statusText = '';
+
+                            if (game.status === 'current') {
+                                const r1 = match.team1_last_game_score ?? '-';
+                                const r2 = match.team2_last_game_score ?? '-';
+                                scoreText = ` (${r1} - ${r2})`;
+                                statusText = ' (Current)';
+                            } else if (game.status === 'finished') {
+                                statusText = ' (Finished)';
+                            } else if (game.status === 'upcoming') {
+                                statusText = ' (Upcoming)';
+                            }
 
                             const mapLabel = new St.Label({
-                                text: `Map ${game.number}: ${mapName}${statusText}`,
+                                text: `Map ${game.number}: ${mapName}${scoreText}${statusText}`,
                                 style_class: 'map_name_detail',
                                 x_align: Clutter.ActorAlign.CENTER,
                             });
@@ -419,6 +441,18 @@ const Indicator = GObject.registerClass(
                             x_align: Clutter.ActorAlign.CENTER,
                         });
                         this.mapsContainer.add_child(noMapsLabel);
+                    }
+
+                    if (match.start_date) {
+                        const dateObj = new Date(match.start_date);
+                        const day = String(dateObj.getUTCDate()).padStart(2, '0');
+                        const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+                        const year = dateObj.getUTCFullYear();
+                        const hours = String(dateObj.getUTCHours()).padStart(2, '0');
+                        const minutes = String(dateObj.getUTCMinutes()).padStart(2, '0');
+                        this.matchDateDetail.text = `Date: ${day}-${month}-${year} ${hours}:${minutes} UTC`;
+                    } else {
+                        this.matchDateDetail.text = '';
                     }
 
                     this.tournamentNameDetail.text = tournamentName;
@@ -484,6 +518,12 @@ const Indicator = GObject.registerClass(
             this.tournamentNameDetail = new St.Label({
                 text: '',
                 style_class: 'tournament_name_detail',
+            });
+
+            this.matchDateDetail = new St.Label({
+                text: '',
+                style_class: 'match_date_detail',
+                x_align: Clutter.ActorAlign.CENTER,
             });
 
             this.teamsLogosDetailContainer = new St.BoxLayout({
@@ -562,6 +602,7 @@ const Indicator = GObject.registerClass(
 
             this.tournamentLogoLabelContainer.add_child(this.tournamentLogo);
             this.tournamentLogoLabelContainer.add_child(this.tournamentNameDetail);
+            this.tournamentLogoLabelContainer.add_child(this.matchDateDetail);
 
             this.detailsPage.add_child(this.backButtonLabelContainer);
             this.detailsPage.add_child(divisor);

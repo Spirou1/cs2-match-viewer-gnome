@@ -4,13 +4,15 @@
 
 .menu_title_text {
     font-size: 18px;
+    font-weight: bold;
     color: white;
     margin-left: 10px;
 }
 
 .menu_subtitle_text {
-    margin-bottom: 10px;
-    font-size: 18px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-left: 10px;
 }
 
 .team_name {
@@ -20,8 +22,9 @@
     padding: 2px 4px;
 }
 
-.date_text {
-    font-size: 14px;
+.format_text {
+    font-size: 13px;
+    font-weight: bold;
     color: #aaa;
 }
 
@@ -32,7 +35,7 @@
     padding: 2px 6px;
 }
 
-.date_title {
+.format_title {
     margin-right: 0px;
 }
 
@@ -139,6 +142,12 @@
     margin-top: 10px;
     font-size: 22px;
     color: white;
+}
+
+.match_date_detail {
+    font-size: 13px;
+    color: #aaa;
+    margin-top: 4px;
 }
 
 .maps_container {

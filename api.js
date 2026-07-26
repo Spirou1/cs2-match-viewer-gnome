@@ -40,8 +40,8 @@ export async function fetchFinishedMatches(customDate = null) {
     const day = String(now.getDate()).padStart(2, '0');
     const dateStr = customDate || `${year}-${month}-${day}`;
 
-    //const url = `https://api.bo3.gg/api/v2/matches/finished?date=2026-07-24&utc_offset=0&filter[discipline_id][eq]=1`;
-    const url = `https://api.bo3.gg/api/v2/matches/finished?date=${dateStr}&utc_offset=0&filter[discipline_id][eq]=1`;
+    const url = `https://api.bo3.gg/api/v2/matches/finished?date=2026-07-24&utc_offset=0&filter[discipline_id][eq]=1`;
+    //const url = `https://api.bo3.gg/api/v2/matches/finished?date=${dateStr}&utc_offset=0&filter[discipline_id][eq]=1`;
     const message = Soup.Message.new('GET', url);
 
     try {
