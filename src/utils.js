@@ -42,3 +42,23 @@ export async function getCachedImageUri(remoteUrl) {
         return null;
     }
 }
+
+export function getCountryFlagEmoji(countryCode) {
+    if (!countryCode || typeof countryCode !== 'string' || countryCode.length !== 2) {
+        return '🌐';
+    }
+
+    const codePoints = countryCode
+        .toUpperCase()
+        .split('')
+        .map(char => 127397 + char.charCodeAt(0));
+
+    return String.fromCodePoint(...codePoints);
+}
+
+export function formatRating(bo3Rating) {
+    if (!bo3Rating || typeof bo3Rating !== 'number') return '';
+
+    const ratingHLTV = (bo3Rating / 5.50) - 0.05;
+    return ratingHLTV.toFixed(2); 
+}

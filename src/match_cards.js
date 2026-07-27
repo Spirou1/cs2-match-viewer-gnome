@@ -3,7 +3,7 @@ import Clutter from 'gi://Clutter';
 import Pango from 'gi://Pango';
 
 import * as load_matches from './match_controller.js';
-import { parseMatchMaps, getCachedImageUri } from './utils.js';
+import { parseMatchMaps, getCachedImageUri, getCountryFlagEmoji, formatRating } from './utils.js';
 
 export function groupMatchesByTournament(matchesList) {
     if (!Array.isArray(matchesList)) return {};
@@ -238,102 +238,155 @@ export async function createMatchCard(indicator, match, matchesJson) {
     matchBoxLayout.add_child(tournamentContainer);
     matchBoxLayout.add_child(formatContainer);
 
+    //rendering details section here
     matchButton.connect('clicked', async () => {
-        const tournamentId = match.tournament;
-        const tournamentName = matchesJson.included?.tournaments?.[tournamentId]?.name || 'Unknown Tournament';
-        const tournamentLogo = matchesJson.included?.tournaments?.[match.tournament]?.image_url || null;
-        const team1LogoDetail = matchesJson.included?.teams?.[match.team1]?.image_url || null;
-        const team2LogoDetail = matchesJson.included?.teams?.[match.team2]?.image_url || null;
+        try {
+            const tournamentId = match.tournament;
+            const tournamentName = matchesJson.included?.tournaments?.[tournamentId]?.name || 'Unknown Tournament';
+            const tournamentLogo = matchesJson.included?.tournaments?.[match.tournament]?.image_url || null;
+            const team1LogoDetail = matchesJson.included?.teams?.[match.team1]?.image_url || null;
+            const team2LogoDetail = matchesJson.included?.teams?.[match.team2]?.image_url || null;
+            const matchSlug = match.slug;
 
-        const matchSlug = match.slug;
+            const matchDetailJson = await load_matches.loadMatchDetails(indicator, matchSlug);
 
-        const matchDetailJson = await load_matches.loadMatchDetails(indicator, matchSlug);
+            const team1Slug = matchDetailJson?.team1?.slug || matchesJson.included?.teams?.[match.team1]?.slug;
+            const team2Slug = matchDetailJson?.team2?.slug || matchesJson.included?.teams?.[match.team2]?.slug;
 
-        if (matchDetailJson) {
-            const detailSlug = matchDetailJson.slug;
-            indicator.testSlug.text = `${detailSlug}`;
-        }
+            const team1DetailJson = await load_matches.loadTeamDetails(indicator, team1Slug);
+            const team2DetailJson = await load_matches.loadTeamDetails(indicator, team2Slug);
 
-        Promise.all([
-            getCachedImageUri(tournamentLogo),
-            getCachedImageUri(team1LogoDetail),
-            getCachedImageUri(team2LogoDetail),
-        ]).then(([tLogoUri, t1LogoUri, t2LogoUri]) => {
-            indicator.mapsContainer.destroy_all_children();
+            //setting up detail data
+            if (matchDetailJson) {
+                const team1Country = matchDetailJson.team1?.country?.name || 'Unknown Country';
+                const team2Country = matchDetailJson.team2?.country?.name || 'Unknown Country';
+                const team1CountryCode = matchDetailJson.team1?.country?.code || 'N/A';
+                const team2CountryCode = matchDetailJson.team2?.country?.code || 'N/A';
+                indicator.team1Flag = getCountryFlagEmoji(team1CountryCode);
+                indicator.team2Flag = getCountryFlagEmoji(team2CountryCode);
 
-            const boType = match.bo_type ? `BO${match.bo_type}` : 'Maps';
-            const mapContainerTitle = new St.Label({
-                text: `Maps (${boType}):`,
-                style_class: 'maps_container_title',
-                x_align: Clutter.ActorAlign.CENTER,
-                style: 'font-weight: bold; margin-bottom: 8px;',
-            });
-            indicator.mapsContainer.add_child(mapContainerTitle);
+            }
 
-            const maps = parseMatchMaps(match);
+            if (team1DetailJson && team2DetailJson) {
+                const team1Rank = team1DetailJson.rank || 'Unranked';
+                const team2Rank = team2DetailJson.rank || 'Unranked';
 
-            if (maps && maps.length > 0) {
-                maps.forEach((game) => {
-                    const mapName = game.map_name ? game.map_name.replace('de_', '').toUpperCase() : 'TBD';
-                    let scoreText = '';
-                    let statusText = '';
 
-                    if (game.status === 'current') {
-                        const r1 = match.team1_last_game_score ?? '-';
-                        const r2 = match.team2_last_game_score ?? '-';
-                        scoreText = ` (${r1} - ${r2})`;
-                        statusText = ' (Current)';
-                    } else if (game.status === 'finished') {
-                        statusText = ' (Finished)';
-                    } else if (game.status === 'upcoming') {
-                        statusText = ' (Upcoming)';
-                    }
+                const team1Players = (team1DetailJson.players || [])
+                    .filter(p => !p.is_coach && p.nickname)
+                    .slice(0, 5)
+                    .map(p => ({
+                        nickname: p.nickname,
+                        flag: getCountryFlagEmoji(p.country?.code),
+                        rating: formatRating(p.six_month_avg_rating),
+                    }));
 
-                    const mapLabel = new St.Label({
-                        text: `Map ${game.number}: ${mapName}${scoreText}${statusText}`,
+                const team2Players = (team2DetailJson.players || [])
+                    .filter(p => !p.is_coach && p.nickname)
+                    .slice(0, 5)
+                    .map(p => ({
+                        nickname: p.nickname,
+                        flag: getCountryFlagEmoji(p.country?.code),
+                        rating: formatRating(p.six_month_avg_rating),
+                    }));
+
+                indicator.team1PlayerLabels.forEach((labelWidget, index) => {
+                    const player = team1Players[index];
+                    labelWidget.text = player ? `${player.flag} ${player.nickname}   ${player.rating}` : '';
+                });
+
+                indicator.team2PlayerLabels.forEach((labelWidget, index) => {
+                    const player = team2Players[index];
+                    labelWidget.text = player ? `${player.rating}   ${player.nickname} ${player.flag}` : '';
+                });
+
+                indicator.team1RankDetail.text = `#${team1Rank}`;
+                indicator.team2RankDetail.text = `#${team2Rank}`;
+            }
+
+            Promise.all([
+                getCachedImageUri(tournamentLogo),
+                getCachedImageUri(team1LogoDetail),
+                getCachedImageUri(team2LogoDetail),
+            ]).then(([tLogoUri, t1LogoUri, t2LogoUri]) => {
+                indicator.mapsContainer.destroy_all_children();
+
+                const boType = match.bo_type ? `BO${match.bo_type}` : 'Maps';
+                const mapContainerTitle = new St.Label({
+                    text: `Maps (${boType}):`,
+                    style_class: 'maps_container_title',
+                    x_align: Clutter.ActorAlign.CENTER,
+                    style: 'font-weight: bold; margin-bottom: 8px;',
+                });
+                indicator.mapsContainer.add_child(mapContainerTitle);
+
+                const maps = parseMatchMaps(match);
+
+                if (maps && maps.length > 0) {
+                    maps.forEach((game) => {
+                        const mapName = game.map_name ? game.map_name.replace('de_', '').toUpperCase() : 'TBD';
+                        let scoreText = '';
+                        let statusText = '';
+
+                        if (game.status === 'current') {
+                            const r1 = match.team1_last_game_score ?? '-';
+                            const r2 = match.team2_last_game_score ?? '-';
+                            scoreText = ` (${r1} - ${r2})`;
+                            statusText = ' (Current)';
+                        } else if (game.status === 'finished') {
+                            statusText = ' (Finished)';
+                        } else if (game.status === 'upcoming') {
+                            statusText = ' (Upcoming)';
+                        }
+
+                        const mapLabel = new St.Label({
+                            text: `Map ${game.number}: ${mapName}${scoreText}${statusText}`,
+                            style_class: 'map_name_detail',
+                            x_align: Clutter.ActorAlign.CENTER,
+                        });
+
+                        indicator.mapsContainer.add_child(mapLabel);
+                    });
+                } else {
+                    const noMapsLabel = new St.Label({
+                        text: 'No maps defined yet',
                         style_class: 'map_name_detail',
                         x_align: Clutter.ActorAlign.CENTER,
                     });
+                    indicator.mapsContainer.add_child(noMapsLabel);
+                }
 
-                    indicator.mapsContainer.add_child(mapLabel);
-                });
-            } else {
-                const noMapsLabel = new St.Label({
-                    text: 'No maps defined yet',
-                    style_class: 'map_name_detail',
-                    x_align: Clutter.ActorAlign.CENTER,
-                });
-                indicator.mapsContainer.add_child(noMapsLabel);
-            }
+                if (match.start_date) {
+                    const dateObj = new Date(match.start_date);
+                    const day = String(dateObj.getUTCDate()).padStart(2, '0');
+                    const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+                    const year = dateObj.getUTCFullYear();
+                    const hours = String(dateObj.getUTCHours()).padStart(2, '0');
+                    const minutes = String(dateObj.getUTCMinutes()).padStart(2, '0');
+                    indicator.matchDateDetail.text = `Date: ${day}-${month}-${year} ${hours}:${minutes} UTC`;
+                } else {
+                    indicator.matchDateDetail.text = '';
+                }
 
-            if (match.start_date) {
-                const dateObj = new Date(match.start_date);
-                const day = String(dateObj.getUTCDate()).padStart(2, '0');
-                const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
-                const year = dateObj.getUTCFullYear();
-                const hours = String(dateObj.getUTCHours()).padStart(2, '0');
-                const minutes = String(dateObj.getUTCMinutes()).padStart(2, '0');
-                indicator.matchDateDetail.text = `Date: ${day}-${month}-${year} ${hours}:${minutes} UTC`;
-            } else {
-                indicator.matchDateDetail.text = '';
-            }
+                indicator.tournamentNameDetail.text = tournamentName;
+                indicator.team1NameDetail.text = `${indicator.team1Flag} ${team1name}`;
+                indicator.team2NameDetail.text = `${indicator.team2Flag} ${team2name}`;
+                indicator.team1ScoreDetail.text = String(team1ScoreText);
+                indicator.team2ScoreDetail.text = String(team2ScoreText);
 
-            indicator.tournamentNameDetail.text = tournamentName;
-            indicator.team1NameDetail.text = team1name;
-            indicator.team2NameDetail.text = team2name;
-            indicator.team1ScoreDetail.text = String(team1ScoreText);
-            indicator.team2ScoreDetail.text = String(team2ScoreText);
+                indicator.team1ScoreDetail.style_class = `team_score_detail ${team1DetailClass}`;
+                indicator.team2ScoreDetail.style_class = `team_score_detail ${team2DetailClass}`;
 
-            indicator.team1ScoreDetail.style_class = `team_score_detail ${team1DetailClass}`;
-            indicator.team2ScoreDetail.style_class = `team_score_detail ${team2DetailClass}`;
+                indicator.tournamentLogo.style = `background-image: url("${tLogoUri || placeholderPath}");`;
+                indicator.team1IconDetail.style = `background-image: url("${t1LogoUri || placeholderPath}");`;
+                indicator.team2IconDetail.style = `background-image: url("${t2LogoUri || placeholderPath}");`;
 
-            indicator.tournamentLogo.style = `background-image: url("${tLogoUri || placeholderPath}");`;
-            indicator.team1IconDetail.style = `background-image: url("${t1LogoUri || placeholderPath}");`;
-            indicator.team2IconDetail.style = `background-image: url("${t2LogoUri || placeholderPath}");`;
-
-            indicator.mainPage.visible = false;
-            indicator.detailsPage.visible = true;
-        });
+                indicator.mainPage.visible = false;
+                indicator.detailsPage.visible = true;
+            });
+        } catch (e) {
+            log(`error opening details page: ${e.message}`);
+        }
     });
 
     return matchButton;

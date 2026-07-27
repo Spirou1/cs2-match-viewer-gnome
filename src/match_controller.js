@@ -59,12 +59,25 @@ export async function loadMatchDetails(indicator, slug) {
         const matchDetailsJson = await api.fetchMatchDetails(slug);
 
         if (matchDetailsJson) {
-            indicator.textoStatus.text = 'DEU CERTO';
             return matchDetailsJson
         }
         return null;
     } catch (e) {
         log(`Error fetching match details: ${e.message}`);
+        return null;
+    }
+}
+
+export async function loadTeamDetails(indicator, teamName) {
+    try {
+        const teamDetailsJson = await api.fetchTeamDetails(teamName);
+
+        if (teamDetailsJson) {
+            return teamDetailsJson;
+        }
+        return null;
+    } catch (e) {
+        log(`Error fetching team details: ${e.message}`);
         return null;
     }
 }

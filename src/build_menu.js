@@ -179,10 +179,6 @@ export function buildDetailsSection(indicator) {
         style_class: 'tournament_name_detail',
     });
 
-    indicator.testSlug = new St.Label({
-        text: '',
-    });
-
     indicator.matchDateDetail = new St.Label({
         text: '',
         style_class: 'match_date_detail',
@@ -209,6 +205,13 @@ export function buildDetailsSection(indicator) {
         x_align: Clutter.ActorAlign.CENTER,
     });
 
+
+    indicator.team1RankDetail = new St.Label({
+        text: '',
+        style_class: 'team_rank_detail',
+        x_align: Clutter.ActorAlign.CENTER,
+    });
+
     indicator.team1ScoreDetail = new St.Label({
         text: '-',
         style_class: `team_score_detail ${indicator.team1DetailClass}`,
@@ -231,10 +234,112 @@ export function buildDetailsSection(indicator) {
         x_align: Clutter.ActorAlign.CENTER,
     });
 
+
+    indicator.team2RankDetail = new St.Label({
+        text: '',
+        style_class: 'team_rank_detail',
+        x_align: Clutter.ActorAlign.CENTER,
+    });
+
     indicator.team2ScoreDetail = new St.Label({
         text: '-',
         style_class: `team_score_detail ${indicator.team2ScoreDetail}`,
         x_align: Clutter.ActorAlign.CENTER,
+    });
+
+    indicator.mainPlayersContainer = new St.BoxLayout({
+        vertical: true,
+        style_class: 'main_players_container',
+    });
+
+    indicator.playersContainerTitleDetail = new St.Label({
+        text: 'Rosters: ',
+        style_class: 'players_container_title',
+        x_align: Clutter.ActorAlign.CENTER,
+    });
+
+    indicator.rosterContainer = new St.BoxLayout({
+        style_class: 'roster_container'
+    })
+
+    indicator.team1PlayersContainer = new St.BoxLayout({
+        vertical: true,
+    });
+
+    indicator.team2PlayersContainer = new St.BoxLayout({
+        vertical: true,
+    });
+
+    indicator.team1Player1Detail = new St.Label({
+        text: 'Unknown Player',
+        style_class: 'player_name_detail',
+    });
+
+    indicator.team1Player2Detail = new St.Label({
+        text: 'Unknown Player',
+        style_class: 'player_name_detail',
+    });
+
+    indicator.team1Player3Detail = new St.Label({
+        text: 'Unknown Player',
+        style_class: 'player_name_detail',
+    });
+
+    indicator.team1Player4Detail = new St.Label({
+        text: 'Unknown Player',
+        style_class: 'player_name_detail',
+    });
+
+    indicator.team1Player5Detail = new St.Label({
+        text: 'Unknown Player',
+        style_class: 'player_name_detail',
+    });
+
+    indicator.team2Player1Detail = new St.Label({
+        text: 'Unknown Player',
+        style_class: 'player_name_detail',
+    });
+
+    indicator.team2Player2Detail = new St.Label({
+        text: 'Unknown Player',
+        style_class: 'player_name_detail',
+    });
+
+    indicator.team2Player3Detail = new St.Label({
+        text: 'Unknown Player',
+        style_class: 'player_name_detail',
+    });
+
+    indicator.team2Player4Detail = new St.Label({
+        text: 'Unknown Player',
+        style_class: 'player_name_detail',
+    });
+
+    indicator.team2Player5Detail = new St.Label({
+        text: 'Unknown Player',
+        style_class: 'player_name_detail',
+    });
+
+    //making array of labels to make it easier to load names
+    indicator.team1PlayerLabels = [                                                                                                                                                                                                                                                     
+        indicator.team1Player1Detail,                                                                                                                                                                                                                                                   
+        indicator.team1Player2Detail,                                                                                                                                                                                                                                                   
+        indicator.team1Player3Detail,                                                                                                                                                                                                                                                   
+        indicator.team1Player4Detail,                                                                                                                                                                                                                                                   
+        indicator.team1Player5Detail,                                                                                                                                                                                                                                                   
+    ];
+  
+    indicator.team2PlayerLabels = [
+        indicator.team2Player1Detail,
+        indicator.team2Player2Detail,
+        indicator.team2Player3Detail,
+        indicator.team2Player4Detail,
+        indicator.team2Player5Detail,
+    ];
+
+    indicator.ratingsSubtitle = new St.Label({
+        text: 'Approximate ratings from last 6 months',
+        style_class: 'ratings_subtitle',
     });
 
     indicator.mapsContainer = new St.BoxLayout({
@@ -244,19 +349,45 @@ export function buildDetailsSection(indicator) {
     });
 
 
-    const spacer = new St.Widget({
+    const spacer1 = new St.Widget({
         x_expand: true,
     });
 
+    const spacer2 = new St.Widget({
+        x_expand: true,
+    });
+
+    indicator.team1PlayersContainer.add_child(indicator.team1Player1Detail);
+    indicator.team1PlayersContainer.add_child(indicator.team1Player2Detail);
+    indicator.team1PlayersContainer.add_child(indicator.team1Player3Detail);
+    indicator.team1PlayersContainer.add_child(indicator.team1Player4Detail);
+    indicator.team1PlayersContainer.add_child(indicator.team1Player5Detail);
+
+    indicator.team2PlayersContainer.add_child(indicator.team2Player1Detail);
+    indicator.team2PlayersContainer.add_child(indicator.team2Player2Detail);
+    indicator.team2PlayersContainer.add_child(indicator.team2Player3Detail);
+    indicator.team2PlayersContainer.add_child(indicator.team2Player4Detail);
+    indicator.team2PlayersContainer.add_child(indicator.team2Player5Detail);
+
+    indicator.rosterContainer.add_child(indicator.team1PlayersContainer);
+    indicator.rosterContainer.add_child(spacer2)
+    indicator.rosterContainer.add_child(indicator.team2PlayersContainer);
+
+    indicator.mainPlayersContainer.add_child(indicator.playersContainerTitleDetail);
+    indicator.mainPlayersContainer.add_child(indicator.rosterContainer);
+    indicator.mainPlayersContainer.add_child(indicator.ratingsSubtitle);
+
     indicator.team1ContainerDetail.add_child(indicator.team1IconDetail);
     indicator.team1ContainerDetail.add_child(indicator.team1NameDetail);
+    indicator.team1ContainerDetail.add_child(indicator.team1RankDetail);
     indicator.team1ContainerDetail.add_child(indicator.team1ScoreDetail);
     indicator.team2ContainerDetail.add_child(indicator.team2IconDetail);
     indicator.team2ContainerDetail.add_child(indicator.team2NameDetail);
+    indicator.team2ContainerDetail.add_child(indicator.team2RankDetail);
     indicator.team2ContainerDetail.add_child(indicator.team2ScoreDetail);
 
     indicator.teamsLogosDetailContainer.add_child(indicator.team1ContainerDetail);
-    indicator.teamsLogosDetailContainer.add_child(spacer);
+    indicator.teamsLogosDetailContainer.add_child(spacer1);
     indicator.teamsLogosDetailContainer.add_child(indicator.team2ContainerDetail);
 
 
@@ -265,12 +396,12 @@ export function buildDetailsSection(indicator) {
 
     indicator.tournamentLogoLabelContainer.add_child(indicator.tournamentLogo);
     indicator.tournamentLogoLabelContainer.add_child(indicator.tournamentNameDetail);
-    indicator.tournamentLogoLabelContainer.add_child(indicator.testSlug);
     indicator.tournamentLogoLabelContainer.add_child(indicator.matchDateDetail);
 
     indicator.detailsPage.add_child(indicator.backButtonLabelContainer);
     indicator.detailsPage.add_child(divisor);
     indicator.detailsPage.add_child(indicator.tournamentLogoLabelContainer);
     indicator.detailsPage.add_child(indicator.teamsLogosDetailContainer);
+    indicator.detailsPage.add_child(indicator.mainPlayersContainer);
     indicator.detailsPage.add_child(indicator.mapsContainer);
 }

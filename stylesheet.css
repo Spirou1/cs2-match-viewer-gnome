@@ -108,7 +108,7 @@
 }
 
 .maps_container {
-    margin-top: 30px;
+    margin-top: 15px;
 }
 
 .tournament_logo {
@@ -133,9 +133,21 @@
 }
 
 .team_name_detail {
-    font-size: 20px;
+    font-size: 22px;
     color: white;
-    margin: 10px;
+    margin-top: 10px;
+}
+
+.team_country_detail {
+    font-size: 14px;
+    color: grey;
+    margin-bottom: 5px;
+}
+
+.team_rank_detail {
+    font-size: 12px;
+    color: grey;
+    margin-bottom: 10px;
 }
 
 .tournament_name_detail {
@@ -151,13 +163,13 @@
 }
 
 .maps_container {
-    font-size: 22px;
+    font-size: 18px;
     color: white;
     margin-bottom: 5px;
 }
 
 .map_name_detail {
-    font-size: 16px;
+    font-size: 14px;
     padding: 5px;
     color: white;
 }
@@ -226,16 +238,42 @@
 }
 
 .team_score_detail_win {
-    font-size: 22px;
+    font-size: 24px;
     color: green;
 }
 
 .team_score_detail_lose {
-    font-size: 22px;
+    font-size: 24px;
     color: #f44336;
 }
 
 .team_score_detail_tie {
-    font-size: 22px;
+    font-size: 24px;
     color: #888888;
+}
+
+.players_container_title {
+    margin-top: 15px;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+}
+
+.roster_container {
+    margin-top: 8px;
+    background-color: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 10px 14px;
+}
+
+.player_name_detail {
+    font-size: 15px;
+    color: #e0e0e0;
+    padding: 3px 0;
+}
+
+.ratings_subtitle {
+    font-size: 13px;
+    color: grey;
 }
