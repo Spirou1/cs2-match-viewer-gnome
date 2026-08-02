@@ -139,7 +139,7 @@ export function buildMainSpinner(indicator) {
         x_align: Clutter.ActorAlign.END,
         y_align: Clutter.ActorAlign.CENTER,
         visible: false,
-        style: 'margin-top: 6px; padding: 4px 10px; background-color: rgba(217, 133, 24, 0.15); border: 1px solid rgba(217, 133, 24, 0.4); border-radius: 6px;',
+        style: 'margin-top: 10px; padding: 6px; background-color: rgba(217, 133, 24, 0.15); border: 1px solid rgba(217, 133, 24, 0.4); border-radius: 6px;',
     });
 
     const mainSpinnerIcon = new St.Icon({
@@ -192,6 +192,7 @@ export function buildDetailsSection(indicator) {
         vertical: true,
         x_expand: true,
         style_class: 'tournament_logo_label',
+        x_align: Clutter.ActorAlign.CENTER,
     });
 
     indicator.tournamentLogo = new St.Widget({
@@ -385,6 +386,7 @@ export function buildDetailsSection(indicator) {
 
     const spacer2 = new St.Widget({
         x_expand: true,
+        style: 'min-width: 60px;',
     });
 
     indicator.team1PlayersContainer.add_child(indicator.team1Player1Detail);

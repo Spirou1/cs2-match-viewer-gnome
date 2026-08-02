@@ -334,7 +334,7 @@ export async function createMatchCard(indicator, match, matchesJson) {
                 const maps = parseMatchMaps(match);
 
                 if (maps && maps.length > 0) {
-                    maps.forEach((game) => {
+                    maps.forEach((game, index) => {
                         const mapName = game.map_name ? game.map_name.replace('de_', '').toUpperCase() : 'TBD';
                         let scoreText = '';
                         let statusText = '';
@@ -345,7 +345,15 @@ export async function createMatchCard(indicator, match, matchesJson) {
                             scoreText = ` (${r1} - ${r2})`;
                             statusText = ' (Current)';
                         } else if (game.status === 'finished') {
-                            statusText = ' (Finished)';
+                            const mapsScore = matchDetailJson?.maps_score;
+                            if (Array.isArray(mapsScore) && index < mapsScore.length) {
+                                const team2Won = mapsScore[index] === true;
+                                const winnerName = team2Won ? team2name : team1name;
+                                const winnerFlag = team2Won ? indicator.team2Flag : indicator.team1Flag;
+                                statusText = ` • Winner: ${winnerFlag} ${winnerName}`;
+                            } else {
+                                statusText = ' (Finished)';
+                            }
                         } else if (game.status === 'upcoming') {
                             statusText = ' (Upcoming)';
                         }
