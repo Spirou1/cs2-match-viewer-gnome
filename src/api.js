@@ -35,9 +35,9 @@ export async function fetchFinishedMatches(customDate = null) {
     const session = new Soup.Session();
 
     const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
+    const year = now.getUTCFullYear();
+    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(now.getUTCDate()).padStart(2, '0');
     const dateStr = customDate || `${year}-${month}-${day}`;
 
     //const url = `https://api.bo3.gg/api/v2/matches/finished?date=2026-07-24&utc_offset=0&filter[discipline_id][eq]=1`;

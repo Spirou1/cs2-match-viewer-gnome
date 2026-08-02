@@ -93,13 +93,23 @@ export async function createMatchCard(indicator, match, matchesJson) {
         getCachedImageUri(tournamentLogoSmall),
     ]);
 
+    const isFinished = match.status === 'finished' || match.status === 'defwin' || match.status === 'done';
+
     const team1RoundScore = match.team1_last_game_score ?? '-';
     const team2RoundScore = match.team2_last_game_score ?? '-';
-    const team1MapScore = match.team1_score ?? '(-)';
-    const team2MapScore = match.team2_score ?? '(-)';
+    const team1MapScore = match.team1_score ?? 0;
+    const team2MapScore = match.team2_score ?? 0;
 
-    const team1ScoreText = `(${team1MapScore}) ${team1RoundScore}`;
-    const team2ScoreText = `${team2RoundScore} (${team2MapScore})`;
+    let team1ScoreText;
+    let team2ScoreText;
+
+    if (isFinished) {
+        team1ScoreText = `${team1MapScore}`;
+        team2ScoreText = `${team2MapScore}`;
+    } else {
+        team1ScoreText = `(${team1MapScore}) ${team1RoundScore}`;
+        team2ScoreText = `${team2RoundScore} (${team2MapScore})`;
+    }
 
     let team1Class = 'score_tie';
     let team2Class = 'score_tie';
@@ -238,9 +248,10 @@ export async function createMatchCard(indicator, match, matchesJson) {
     matchBoxLayout.add_child(tournamentContainer);
     matchBoxLayout.add_child(formatContainer);
 
-    //rendering details section here
     matchButton.connect('clicked', async () => {
         try {
+            if (indicator.mainSpinnerContainer) indicator.mainSpinnerContainer.visible = true;
+
             const tournamentId = match.tournament;
             const tournamentName = matchesJson.included?.tournaments?.[tournamentId]?.name || 'Unknown Tournament';
             const tournamentLogo = matchesJson.included?.tournaments?.[match.tournament]?.image_url || null;
@@ -381,11 +392,13 @@ export async function createMatchCard(indicator, match, matchesJson) {
                 indicator.team1IconDetail.style = `background-image: url("${t1LogoUri || placeholderPath}");`;
                 indicator.team2IconDetail.style = `background-image: url("${t2LogoUri || placeholderPath}");`;
 
+                if (indicator.mainSpinnerContainer) indicator.mainSpinnerContainer.visible = false;
                 indicator.mainPage.visible = false;
                 indicator.detailsPage.visible = true;
             });
         } catch (e) {
             log(`error opening details page: ${e.message}`);
+            if (indicator.mainSpinnerContainer) indicator.mainSpinnerContainer.visible = false;
         }
     });
 

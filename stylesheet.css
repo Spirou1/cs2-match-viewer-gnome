@@ -133,9 +133,12 @@
 }
 
 .team_name_detail {
-    font-size: 22px;
+    font-size: 18px;
+    font-weight: bold;
     color: white;
-    margin-top: 10px;
+    margin-top: 8px;
+    max-width: 250px;
+    text-align: center;
 }
 
 .team_country_detail {
@@ -237,19 +240,22 @@
     color: #888888;
 }
 
+.team_score_detail {
+    font-size: 32px;
+    font-weight: bold;
+    margin-top: 4px;
+}
+
 .team_score_detail_win {
-    font-size: 24px;
-    color: green;
+    color: #4caf50;
 }
 
 .team_score_detail_lose {
-    font-size: 24px;
-    color: #f44336;
+    color: #ef5350;
 }
 
 .team_score_detail_tie {
-    font-size: 24px;
-    color: #888888;
+    color: #b0bec5;
 }
 
 .players_container_title {

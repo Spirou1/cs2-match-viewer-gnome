@@ -19,7 +19,7 @@ export function buildPanelIndicator(indicator) {
 }
 
 export function buildMenuBase(indicator) {
-    indicator.menu.actor.style = 'width: 600px;';
+    indicator.menu.actor.style = 'min-width: 660px; width: 660px;';
     indicator.mainMenuContainer = new PopupMenu.PopupBaseMenuItem({
         reactive: false,
         activate: false,
@@ -134,6 +134,31 @@ export function buildHeader(indicator) {
     indicator.mainPage.add_child(matchTitleContainer);
 }
 
+export function buildMainSpinner(indicator) {
+    indicator.mainSpinnerContainer = new St.BoxLayout({
+        x_align: Clutter.ActorAlign.END,
+        y_align: Clutter.ActorAlign.CENTER,
+        visible: false,
+        style: 'margin-top: 6px; padding: 4px 10px; background-color: rgba(217, 133, 24, 0.15); border: 1px solid rgba(217, 133, 24, 0.4); border-radius: 6px;',
+    });
+
+    const mainSpinnerIcon = new St.Icon({
+        icon_name: 'view-refresh-symbolic',
+        style_class: 'system-status-icon',
+        style: 'icon-size: 14px; margin-right: 6px;',
+        y_align: Clutter.ActorAlign.CENTER,
+    });
+
+    const mainSpinnerLabel = new St.Label({
+        text: 'Loading details...',
+        style: 'color: #d98518; font-size: 11px; font-weight: bold;',
+        y_align: Clutter.ActorAlign.CENTER,
+    });
+
+    indicator.mainSpinnerContainer.add_child(mainSpinnerIcon);
+    indicator.mainSpinnerContainer.add_child(mainSpinnerLabel);
+}
+
 
 export function buildDetailsSection(indicator) {
     indicator.backButtonLabelContainer = new St.BoxLayout({ x_expand: true })
@@ -154,7 +179,7 @@ export function buildDetailsSection(indicator) {
     indicator.backButton.set_child(backButtonIcon)
 
     indicator.detailContentLabel = new St.Label({
-        text: 'Detailed view:',
+        text: 'Match Details:',
         style_class: 'detail_content_label',
         y_align: Clutter.ActorAlign.CENTER,
     });
@@ -243,7 +268,7 @@ export function buildDetailsSection(indicator) {
 
     indicator.team2ScoreDetail = new St.Label({
         text: '-',
-        style_class: `team_score_detail ${indicator.team2ScoreDetail}`,
+        style_class: 'team_score_detail',
         x_align: Clutter.ActorAlign.CENTER,
     });
 
@@ -259,15 +284,20 @@ export function buildDetailsSection(indicator) {
     });
 
     indicator.rosterContainer = new St.BoxLayout({
-        style_class: 'roster_container'
-    })
+        style_class: 'roster_container',
+        x_expand: true,
+    });
 
     indicator.team1PlayersContainer = new St.BoxLayout({
         vertical: true,
+        x_expand: true,
+        x_align: Clutter.ActorAlign.START,
     });
 
     indicator.team2PlayersContainer = new St.BoxLayout({
         vertical: true,
+        x_expand: true,
+        x_align: Clutter.ActorAlign.END,
     });
 
     indicator.team1Player1Detail = new St.Label({

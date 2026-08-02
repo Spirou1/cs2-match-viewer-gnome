@@ -66,6 +66,11 @@ const Indicator = GObject.registerClass(
             scrollView.set_child(scrollContent);
             this.mainPage.add_child(scrollView);
 
+            build_menu.buildMainSpinner(this);
+            if (this.mainSpinnerContainer) {
+                this.mainPage.add_child(this.mainSpinnerContainer);
+            }
+
             build_menu.buildDetailsSection(this);
             this._connectEvents();
 
@@ -75,10 +80,6 @@ const Indicator = GObject.registerClass(
 
             this._timeoutId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => {
                 load_matches.loadMatches(this);
-
-                if (this.finishedCardsContainer.visible) {
-                    load_matches.loadFinishedMatches(this);
-                }
                 return GLib.SOURCE_CONTINUE;
             });
 
@@ -104,6 +105,8 @@ const Indicator = GObject.registerClass(
 
                 this.liveCardsContainer.visible = false;
                 this.finishedCardsContainer.visible = true;
+
+                load_matches.loadFinishedMatches(this);
             });
         }
 
