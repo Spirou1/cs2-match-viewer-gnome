@@ -3,3 +3,4 @@ jsons/
 .vscode/
 .DS_Store
 *.log
+*.compiled

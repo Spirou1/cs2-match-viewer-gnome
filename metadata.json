@@ -4,5 +4,6 @@
   "uuid": "cs2matchviewer@enzospironelli.com.br",
   "shell-version": [
     "50"
-  ]
+  ],
+  "settings-schema": "org.gnome.shell.extensions.cs2matchviewer"
 }

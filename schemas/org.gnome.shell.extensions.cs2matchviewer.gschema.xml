@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.cs2matchviewer" path="/org/gnome/shell/extensions/cs2matchviewer/">
+    <key name="show-tier-s" type="b">
+      <default>true</default>
+      <summary>Show Tier S</summary>
+      <description>Show Tier S tournament matches.</description>
+    </key>
+    <key name="show-tier-a" type="b">
+      <default>true</default>
+      <summary>Show Tier A</summary>
+      <description>Show Tier A tournament matches.</description>
+    </key>
+    <key name="show-tier-b" type="b">
+      <default>true</default>
+      <summary>Show Tier B</summary>
+      <description>Show Tier B tournament matches.</description>
+    </key>
+    <key name="show-tier-c" type="b">
+      <default>true</default>
+      <summary>Show Tier C</summary>
+      <description>Show Tier C tournament matches.</description>
+    </key>
+    <key name="show-tier-d" type="b">
+      <default>true</default>
+      <summary>Show Tier D and others</summary>
+      <description>Show Tier D and unclassified tournament matches.</description>
+    </key>
+  </schema>
+</schemalist>

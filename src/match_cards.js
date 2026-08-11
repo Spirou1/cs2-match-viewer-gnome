@@ -18,6 +18,16 @@ export function groupMatchesByTournament(matchesList) {
     }, {});
 }
 
+export function isTierEnabled(settings, tierRaw) {
+    if (!settings) return true;
+    const t = (tierRaw || 'd').toLowerCase();
+    if (t === 's') return settings.get_boolean('show-tier-s');
+    if (t === 'a') return settings.get_boolean('show-tier-a');
+    if (t === 'b') return settings.get_boolean('show-tier-b');
+    if (t === 'c') return settings.get_boolean('show-tier-c');
+    return settings.get_boolean('show-tier-d');
+}
+
 export async function renderMatchesGrouped(indicator, container, matchesList, matchesJson) {
     container.destroy_all_children();
 
@@ -31,8 +41,16 @@ export async function renderMatchesGrouped(indicator, container, matchesList, ma
         return (tierPriority[tierA] ?? 99) - (tierPriority[tierB] ?? 99);
     });
 
+    let totalRendered = 0;
+
     for (const [tournamentId, matches] of sortedGrouped) {
         const tournament = matchesJson.included?.tournaments?.[tournamentId];
+        const tierRaw = (tournament?.tier || matches[0]?.tier || 'd').toLowerCase();
+
+        if (!isTierEnabled(indicator._settings, tierRaw)) {
+            continue;
+        }
+
         const tournamentName = tournament?.name || 'Unknown Tournament';
         const tournamentLogo = tournament?.image_versions?.['50x50'] || tournament?.image_url || null;
 
@@ -64,6 +82,7 @@ export async function renderMatchesGrouped(indicator, container, matchesList, ma
         for (let index = 0; index < matches.length; index++) {
             const matchCard = await createMatchCard(indicator, matches[index], matchesJson);
             container.add_child(matchCard);
+            totalRendered++;
 
             if (index < matches.length - 1) {
                 const cardDivisor = new St.Widget({
@@ -72,6 +91,16 @@ export async function renderMatchesGrouped(indicator, container, matchesList, ma
                 container.add_child(cardDivisor);
             }
         }
+    }
+
+    if (totalRendered === 0) {
+        const noGamesLabel = new St.Label({
+            text: 'No matches found for the selected tier filters...',
+            style_class: 'no_games_label',
+            x_align: Clutter.ActorAlign.CENTER,
+            y_align: Clutter.ActorAlign.CENTER,
+        });
+        container.add_child(noGamesLabel);
     }
 }
 
@@ -267,21 +296,26 @@ export async function createMatchCard(indicator, match, matchesJson) {
             const team1DetailJson = await load_matches.loadTeamDetails(indicator, team1Slug);
             const team2DetailJson = await load_matches.loadTeamDetails(indicator, team2Slug);
 
-            //setting up detail data
-            if (matchDetailJson) {
-                const team1Country = matchDetailJson.team1?.country?.name || 'Unknown Country';
-                const team2Country = matchDetailJson.team2?.country?.name || 'Unknown Country';
-                const team1CountryCode = matchDetailJson.team1?.country?.code || 'N/A';
-                const team2CountryCode = matchDetailJson.team2?.country?.code || 'N/A';
-                indicator.team1Flag = getCountryFlagEmoji(team1CountryCode);
-                indicator.team2Flag = getCountryFlagEmoji(team2CountryCode);
+            const detailTeam1Id = String(matchDetailJson?.team1?.id || matchDetailJson?.team1_id || '');
+            const detailTeam2Id = String(matchDetailJson?.team2?.id || matchDetailJson?.team2_id || '');
 
+            const detailTeam1Flag = getCountryFlagEmoji(matchDetailJson?.team1?.country?.code);
+            const detailTeam2Flag = getCountryFlagEmoji(matchDetailJson?.team2?.country?.code);
+
+            if (detailTeam1Id === String(match.team1)) {
+                indicator.team1Flag = detailTeam1Flag;
+                indicator.team2Flag = detailTeam2Flag;
+            } else if (detailTeam1Id === String(match.team2)) {
+                indicator.team1Flag = detailTeam2Flag;
+                indicator.team2Flag = detailTeam1Flag;
+            } else {
+                indicator.team1Flag = detailTeam1Flag;
+                indicator.team2Flag = detailTeam2Flag;
             }
 
             if (team1DetailJson && team2DetailJson) {
                 const team1Rank = team1DetailJson.rank || 'Unranked';
                 const team2Rank = team2DetailJson.rank || 'Unranked';
-
 
                 const team1Players = (team1DetailJson.players || [])
                     .filter(p => !p.is_coach && p.nickname)
@@ -347,9 +381,22 @@ export async function createMatchCard(indicator, match, matchesJson) {
                         } else if (game.status === 'finished') {
                             const mapsScore = matchDetailJson?.maps_score;
                             if (Array.isArray(mapsScore) && index < mapsScore.length) {
-                                const team2Won = mapsScore[index] === true;
-                                const winnerName = team2Won ? team2name : team1name;
-                                const winnerFlag = team2Won ? indicator.team2Flag : indicator.team1Flag;
+                                const detailTeam2Won = mapsScore[index] === true;
+                                const winningTeamId = detailTeam2Won ? detailTeam2Id : detailTeam1Id;
+                                let winnerName;
+                                let winnerFlag;
+
+                                if (winningTeamId === String(match.team2)) {
+                                    winnerName = team2name;
+                                    winnerFlag = indicator.team2Flag;
+                                } else if (winningTeamId === String(match.team1)) {
+                                    winnerName = team1name;
+                                    winnerFlag = indicator.team1Flag;
+                                } else {
+                                    winnerName = detailTeam2Won ? (matchDetailJson?.team2?.name || team2name) : (matchDetailJson?.team1?.name || team1name);
+                                    winnerFlag = detailTeam2Won ? detailTeam2Flag : detailTeam1Flag;
+                                }
+
                                 statusText = ` • Winner: ${winnerFlag} ${winnerName}`;
                             } else {
                                 statusText = ' (Finished)';

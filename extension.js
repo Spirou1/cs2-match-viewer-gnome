@@ -29,9 +29,10 @@ import * as build_menu from './src/build_menu.js';
 
 const Indicator = GObject.registerClass(
     class Indicator extends PanelMenu.Button {
-        _init(extensionInstance) {
-            super._init(0.0, _('My Shiny Indicator'));
+        _init(extensionInstance, settings) {
+            super._init(0.0, _('CS2 Live Matches Viewer'));
             this._extension = extensionInstance;
+            this._settings = settings;
 
             build_menu.buildPanelIndicator(this);
             build_menu.buildMenuBase(this);
@@ -56,7 +57,6 @@ const Indicator = GObject.registerClass(
 
             const scrollContent = new St.BoxLayout({ vertical: true });
 
-            //creating live and finished matches containers
             this.liveCardsContainer = new St.BoxLayout({ vertical: true });
             this.finishedCardsContainer = new St.BoxLayout({ vertical: true, visible: false });
 
@@ -74,9 +74,7 @@ const Indicator = GObject.registerClass(
             build_menu.buildDetailsSection(this);
             this._connectEvents();
 
-
             load_matches.loadMatches(this);
-            load_matches.loadFinishedMatches(this);
 
             this._timeoutId = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => {
                 load_matches.loadMatches(this);
@@ -90,6 +88,19 @@ const Indicator = GObject.registerClass(
                 this.mainPage.visible = true;
                 this.detailsPage.visible = false;
             });
+
+            if (this.settingsButton) {
+                this.settingsButton.connect('clicked', () => {
+                    this._extension.openPreferences();
+                });
+            }
+
+            if (this._settings) {
+                this._settingsChangedId = this._settings.connect('changed', () => {
+                    load_matches.loadMatches(this);
+                    load_matches.loadFinishedMatches(this, true);
+                });
+            }
 
             this.liveTabButton.connect('clicked', () => {
                 this.liveTabButton.add_style_class_name('tab_button_active');
@@ -110,16 +121,32 @@ const Indicator = GObject.registerClass(
             });
         }
 
+        destroy() {
+            if (this._timeoutId) {
+                GLib.Source.remove(this._timeoutId);
+                this._timeoutId = null;
+            }
+
+            if (this._settings && this._settingsChangedId) {
+                this._settings.disconnect(this._settingsChangedId);
+                this._settingsChangedId = null;
+            }
+
+            super.destroy();
+        }
+
     });
 
 export default class IndicatorExampleExtension extends Extension {
     enable() {
-        this._indicator = new Indicator(this);
+        this._settings = this.getSettings();
+        this._indicator = new Indicator(this, this._settings);
         Main.panel.addToStatusArea(this.uuid, this._indicator);
     }
 
     disable() {
-        this._indicator.destroy();
+        this._indicator?.destroy();
         this._indicator = null;
+        this._settings = null;
     }
 }

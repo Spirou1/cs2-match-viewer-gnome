@@ -36,6 +36,7 @@ export function buildHeader(indicator) {
 
     const headerContainer = new St.BoxLayout({
         y_align: Clutter.ActorAlign.CENTER,
+        x_expand: true,
     });
 
 
@@ -49,6 +50,7 @@ export function buildHeader(indicator) {
     const titleBox = new St.BoxLayout({
         vertical: true,
         y_align: Clutter.ActorAlign.CENTER,
+        x_expand: true,
     });
 
     indicator.menuTitleLabel = new St.Label({
@@ -64,8 +66,25 @@ export function buildHeader(indicator) {
     titleBox.add_child(indicator.menuTitleLabel);
     titleBox.add_child(indicator.menuSubtitleLabel);
 
+    indicator.settingsButton = new St.Button({
+        reactive: true,
+        can_focus: true,
+        y_align: Clutter.ActorAlign.START,
+        x_align: Clutter.ActorAlign.END,
+        style_class: 'settings_button',
+    });
+
+    const settingsIcon = new St.Icon({
+        icon_name: 'emblem-system-symbolic',
+        style_class: 'system-status-icon',
+        style: 'icon-size: 20px;'
+    });
+
+    indicator.settingsButton.set_child(settingsIcon);
+
     headerContainer.add_child(headerIcon);
     headerContainer.add_child(titleBox);
+    headerContainer.add_child(indicator.settingsButton);
 
     const divisor1 = new St.Widget({
         style: 'background-color: rgba(255, 255, 255, 0.15); height: 1px; margin: 5px 0;'
