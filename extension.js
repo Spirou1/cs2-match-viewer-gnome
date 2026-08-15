@@ -138,7 +138,7 @@ const Indicator = GObject.registerClass(
 
     });
 
-export default class IndicatorExampleExtension extends Extension {
+export default class CS2MatchViewerExtension extends Extension {
     enable() {
         this._settings = this.getSettings();
         this._indicator = new Indicator(this, this._settings);
