@@ -1,9 +1,11 @@
 import GLib from 'gi://GLib';
 import Soup from 'gi://Soup';
-import Gio from 'gi://Gio';
+
+export const session = new Soup.Session({
+    timeout: 10,
+});
 
 export async function fetchMatches() {
-    const session = new Soup.Session();
     const message = Soup.Message.new('GET', 'https://api.bo3.gg/api/v2/matches/live?filter[discipline_id][eq]=1');
 
     try {
@@ -16,15 +18,6 @@ export async function fetchMatches() {
         const responseText = decoder.decode(bytes.toArray());
         const json = JSON.parse(responseText);
         return json;
-
-        // const file = Gio.File.new_for_uri(import.meta.url).get_parent().get_parent().get_child('jsons').get_child('jsonExemplo.json');
-        // const [success, contents] = file.load_contents(null);
-        // if (success) {
-        //     const decoder = new TextDecoder('utf-8');
-        //     const responseText = decoder.decode(contents);
-        //     return JSON.parse(responseText);
-        // }
-        // return null;
     } catch (error) {
         log(`Error when trying to fetch live matches ${error.message}`);
         return null;
@@ -32,8 +25,6 @@ export async function fetchMatches() {
 }
 
 export async function fetchFinishedMatches(customDate = null) {
-    const session = new Soup.Session();
-
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -63,8 +54,7 @@ export async function fetchFinishedMatches(customDate = null) {
 export async function fetchMatchDetails(matchSlug = null) {
     if (!matchSlug) return null;
 
-    const session = new Soup.Session();
-    const url = `https://bo3.gg/api/v1/matches/${matchSlug}`
+    const url = `https://bo3.gg/api/v1/matches/${matchSlug}`;
     const message = Soup.Message.new('GET', url);
 
     try {
@@ -77,7 +67,7 @@ export async function fetchMatchDetails(matchSlug = null) {
         const responseText = decoder.decode(bytes.toArray());
         const json = JSON.parse(responseText);
 
-        return json
+        return json;
     } catch (error) {
         log(`Error fetching match details ${error.message}`);
         return null;
@@ -87,8 +77,7 @@ export async function fetchMatchDetails(matchSlug = null) {
 export async function fetchTeamDetails(teamName = null) {
     if (!teamName) return null;
 
-    const session = new Soup.Session();
-    const url = `https://bo3.gg/api/v1/teams/${teamName}`
+    const url = `https://bo3.gg/api/v1/teams/${teamName}`;
     const message = Soup.Message.new('GET', url);
 
     try {
@@ -101,7 +90,7 @@ export async function fetchTeamDetails(teamName = null) {
         const responseText = decoder.decode(bytes.toArray());
         const json = JSON.parse(responseText);
 
-        return json
+        return json;
     } catch (error) {
         log(`Error fetching team details ${error.message}`);
         return null;

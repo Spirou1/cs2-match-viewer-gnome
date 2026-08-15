@@ -2,7 +2,13 @@
   "name": "CS2 Live Matches Viewer",
   "description": "Simple gnome extension that enables you to keep up with the score and results of professional Counter Strike 2 matches",
   "uuid": "cs2matchviewer@enzospironelli.com.br",
+  "url": "https://github.com/Spirou1/cs2-match-viewer-gnome",
   "shell-version": [
+    "45",
+    "46",
+    "47",
+    "48",
+    "49",
     "50"
   ],
   "settings-schema": "org.gnome.shell.extensions.cs2matchviewer"
