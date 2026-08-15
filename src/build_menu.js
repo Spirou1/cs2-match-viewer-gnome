@@ -8,13 +8,13 @@ export function buildPanelIndicator(indicator) {
         icon_name: 'find-location-symbolic',
         style_class: 'system-status-icon',
     });
-    indicator.textoStatus = new St.Label({
+    indicator.textStatus = new St.Label({
         text: 'Loading matches...',
         style_class: 'top_label',
         y_align: Clutter.ActorAlign.CENTER,
     });
     container.add_child(icon);
-    container.add_child(indicator.textoStatus);
+    container.add_child(indicator.textStatus);
     indicator.add_child(container);
 }
 

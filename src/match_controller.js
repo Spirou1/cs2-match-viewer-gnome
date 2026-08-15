@@ -11,7 +11,7 @@ export async function loadMatches(indicator) {
         indicator.liveCardsContainer.destroy_all_children();
 
         if (matchesJson && matchesJson.data && matchesJson.data.length > 0) {
-            indicator.textoStatus.text = 'Live Matches';
+            indicator.textStatus.text = 'Live Matches';
 
             await load_menu.renderMatchesGrouped(indicator, indicator.liveCardsContainer, matchesJson.data, matchesJson);
         } else {
@@ -25,11 +25,11 @@ export async function loadMatches(indicator) {
 
             indicator.liveCardsContainer.add_child(noGamesLabel);
 
-            indicator.textoStatus.text = 'No games';
+            indicator.textStatus.text = 'No games';
         }
     } catch (e) {
         log(`Failed to load matches: ${e.message}`);
-        indicator.textoStatus.text = 'Error';
+        indicator.textStatus.text = 'Error';
         indicator.menuTitleLabel.text = 'Failed to fetch API.';
     }
 }

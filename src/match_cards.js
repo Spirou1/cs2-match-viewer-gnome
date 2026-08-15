@@ -380,24 +380,34 @@ export async function createMatchCard(indicator, match, matchesJson) {
                             statusText = ' (Current)';
                         } else if (game.status === 'finished') {
                             const mapsScore = matchDetailJson?.maps_score;
-                            if (Array.isArray(mapsScore) && index < mapsScore.length) {
-                                const detailTeam2Won = mapsScore[index] === true;
-                                const winningTeamId = detailTeam2Won ? detailTeam2Id : detailTeam1Id;
+                            const winnerTeamId = String(matchDetailJson?.winner_team_id || '');
+                            const loserTeamId = String(matchDetailJson?.loser_team_id || '');
+
+                            if (Array.isArray(mapsScore) && index < mapsScore.length && winnerTeamId) {
+                                const isWinnerMap = mapsScore[index] === true;
+                                const winningTeamId = isWinnerMap ? winnerTeamId : loserTeamId;
                                 let winnerName;
                                 let winnerFlag;
 
-                                if (winningTeamId === String(match.team2)) {
-                                    winnerName = team2name;
-                                    winnerFlag = indicator.team2Flag;
-                                } else if (winningTeamId === String(match.team1)) {
+                                if (winningTeamId === String(match.team1)) {
                                     winnerName = team1name;
                                     winnerFlag = indicator.team1Flag;
-                                } else {
-                                    winnerName = detailTeam2Won ? (matchDetailJson?.team2?.name || team2name) : (matchDetailJson?.team1?.name || team1name);
-                                    winnerFlag = detailTeam2Won ? detailTeam2Flag : detailTeam1Flag;
+                                } else if (winningTeamId === String(match.team2)) {
+                                    winnerName = team2name;
+                                    winnerFlag = indicator.team2Flag;
+                                } else if (winningTeamId === detailTeam1Id) {
+                                    winnerName = matchDetailJson?.team1?.name || team1name;
+                                    winnerFlag = detailTeam1Flag;
+                                } else if (winningTeamId === detailTeam2Id) {
+                                    winnerName = matchDetailJson?.team2?.name || team2name;
+                                    winnerFlag = detailTeam2Flag;
                                 }
 
-                                statusText = ` • Winner: ${winnerFlag} ${winnerName}`;
+                                if (winnerName) {
+                                    statusText = ` • Winner: ${winnerFlag} ${winnerName}`;
+                                } else {
+                                    statusText = ' (Finished)';
+                                }
                             } else {
                                 statusText = ' (Finished)';
                             }
