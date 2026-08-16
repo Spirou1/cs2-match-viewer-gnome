@@ -1,7 +1,7 @@
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Soup from 'gi://Soup';
-import { session } from './api.js';
+import { getSession } from './api.js';
 
 const cacheDir = GLib.build_filenamev([GLib.get_user_cache_dir(), 'cs2matchviewer']);
 GLib.mkdir_with_parents(cacheDir, 0o755);
@@ -27,6 +27,7 @@ export async function getCachedImageUri(remoteUrl) {
         }
 
         const message = Soup.Message.new('GET', remoteUrl);
+        const session = getSession();
         const bytes = await session.send_and_read_async(message, GLib.PRIORITY_DEFAULT, null);
 
         file.replace_contents(

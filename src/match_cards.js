@@ -462,7 +462,7 @@ export async function createMatchCard(indicator, match, matchesJson) {
                 indicator.detailsPage.visible = true;
             });
         } catch (e) {
-            log(`error opening details page: ${e.message}`);
+            console.error(`error opening details page: ${e.message}`);
             if (indicator.mainSpinnerContainer) indicator.mainSpinnerContainer.visible = false;
         }
     });

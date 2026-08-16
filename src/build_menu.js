@@ -250,7 +250,6 @@ export function buildDetailsSection(indicator) {
         x_align: Clutter.ActorAlign.CENTER,
     });
 
-
     indicator.team1RankDetail = new St.Label({
         text: '',
         style_class: 'team_rank_detail',
@@ -371,14 +370,14 @@ export function buildDetailsSection(indicator) {
     });
 
     //making array of labels to make it easier to load names
-    indicator.team1PlayerLabels = [                                                                                                                                                                                                                                                     
-        indicator.team1Player1Detail,                                                                                                                                                                                                                                                   
-        indicator.team1Player2Detail,                                                                                                                                                                                                                                                   
-        indicator.team1Player3Detail,                                                                                                                                                                                                                                                   
-        indicator.team1Player4Detail,                                                                                                                                                                                                                                                   
-        indicator.team1Player5Detail,                                                                                                                                                                                                                                                   
+    indicator.team1PlayerLabels = [
+        indicator.team1Player1Detail,
+        indicator.team1Player2Detail,
+        indicator.team1Player3Detail,
+        indicator.team1Player4Detail,
+        indicator.team1Player5Detail,
     ];
-  
+
     indicator.team2PlayerLabels = [
         indicator.team2Player1Detail,
         indicator.team2Player2Detail,
@@ -397,7 +396,6 @@ export function buildDetailsSection(indicator) {
         x_expand: true,
         style_class: 'maps_container',
     });
-
 
     const spacer1 = new St.Widget({
         x_expand: true,

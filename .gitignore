@@ -4,3 +4,4 @@ jsons/
 .DS_Store
 *.log
 *.compiled
+*.zip

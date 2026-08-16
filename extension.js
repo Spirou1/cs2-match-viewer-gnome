@@ -24,7 +24,7 @@ import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-import { session } from './src/api.js';
+import { destroySession } from './src/api.js';
 import * as load_matches from './src/match_controller.js';
 import * as build_menu from './src/build_menu.js';
 
@@ -146,7 +146,7 @@ export default class CS2MatchViewerExtension extends Extension {
     }
 
     disable() {
-        session.abort();
+        destroySession();
         this._indicator?.destroy();
         this._indicator = null;
         this._settings = null;

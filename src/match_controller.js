@@ -28,7 +28,7 @@ export async function loadMatches(indicator) {
             indicator.textStatus.text = 'No games';
         }
     } catch (e) {
-        log(`Failed to load matches: ${e.message}`);
+        console.error(`Failed to load matches: ${e.message}`);
         indicator.textStatus.text = 'Error';
         indicator.menuTitleLabel.text = 'Failed to fetch API.';
     }
@@ -67,7 +67,7 @@ export async function loadFinishedMatches(indicator, forceRefresh = false) {
         await load_menu.renderMatchesGrouped(indicator, indicator.finishedCardsContainer, fullList, finishedMatchesJson || {});
         indicator._lastFinishedFetchTimestamp = Date.now();
     } catch (e) {
-        log(`Error fetching finished matches: ${e.message}`);
+        console.error(`Error fetching finished matches: ${e.message}`);
     }
 }
 
@@ -80,7 +80,7 @@ export async function loadMatchDetails(indicator, slug) {
         }
         return null;
     } catch (e) {
-        log(`Error fetching match details: ${e.message}`);
+        console.error(`Error fetching match details: ${e.message}`);
         return null;
     }
 }
@@ -94,7 +94,7 @@ export async function loadTeamDetails(indicator, teamName) {
         }
         return null;
     } catch (e) {
-        log(`Error fetching team details: ${e.message}`);
+        console.error(`Error fetching team details: ${e.message}`);
         return null;
     }
 }
