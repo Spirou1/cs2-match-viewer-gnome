@@ -44,22 +44,34 @@ export async function getCachedImageUri(remoteUrl) {
     }
 }
 
-export function getCountryFlagEmoji(countryCode) {
+const flagsDir = Gio.File.new_for_uri(import.meta.url)
+    .get_parent() 
+    .get_parent() 
+    .get_child('assets')
+    .get_child('flags');
+
+export function getCountryFlagUri(countryCode) {
     if (!countryCode || typeof countryCode !== 'string' || countryCode.length !== 2) {
-        return '🌐';
+        return null;
     }
 
-    const codePoints = countryCode
-        .toUpperCase()
-        .split('')
-        .map(char => 127397 + char.charCodeAt(0));
+    const flagFile = flagsDir.get_child(`${countryCode.toLowerCase()}.png`);
 
-    return String.fromCodePoint(...codePoints);
+    if (flagFile.query_exists(null)) {
+        return flagFile.get_uri();
+    }
+
+    const fallbackFlag = flagsDir.get_child('un.png');
+    if (fallbackFlag.query_exists(null)) {
+        return fallbackFlag.get_uri();
+    }
+
+    return null;
 }
 
 export function formatRating(bo3Rating) {
     if (!bo3Rating || typeof bo3Rating !== 'number') return '';
 
     const ratingHLTV = (bo3Rating / 5.50) - 0.05;
-    return ratingHLTV.toFixed(2); 
+    return ratingHLTV.toFixed(2);
 }

@@ -244,11 +244,27 @@ export function buildDetailsSection(indicator) {
         x_align: Clutter.ActorAlign.CENTER,
     });
 
+    indicator.team1NameContainer = new St.BoxLayout({
+        style_class: 'team_name_container',
+        x_align: Clutter.ActorAlign.CENTER,
+        y_align: Clutter.ActorAlign.CENTER,
+    });
+
+    indicator.team1FlagIconDetail = new St.Widget({
+        style_class: 'team_flag_detail',
+        y_align: Clutter.ActorAlign.CENTER,
+        visible: false,
+    });
+
     indicator.team1NameDetail = new St.Label({
         text: 'Unknown team',
         style_class: 'team_name_detail',
         x_align: Clutter.ActorAlign.CENTER,
+        y_align: Clutter.ActorAlign.CENTER,
     });
+
+    indicator.team1NameContainer.add_child(indicator.team1FlagIconDetail);
+    indicator.team1NameContainer.add_child(indicator.team1NameDetail);
 
     indicator.team1RankDetail = new St.Label({
         text: '',
@@ -272,11 +288,27 @@ export function buildDetailsSection(indicator) {
         x_align: Clutter.ActorAlign.CENTER,
     });
 
+    indicator.team2NameContainer = new St.BoxLayout({
+        style_class: 'team_name_container',
+        x_align: Clutter.ActorAlign.CENTER,
+        y_align: Clutter.ActorAlign.CENTER,
+    });
+
+    indicator.team2FlagIconDetail = new St.Widget({
+        style_class: 'team_flag_detail',
+        y_align: Clutter.ActorAlign.CENTER,
+        visible: false,
+    });
+
     indicator.team2NameDetail = new St.Label({
         text: 'Unknown team',
         style_class: 'team_name_detail',
         x_align: Clutter.ActorAlign.CENTER,
+        y_align: Clutter.ActorAlign.CENTER,
     });
+
+    indicator.team2NameContainer.add_child(indicator.team2NameDetail);
+    indicator.team2NameContainer.add_child(indicator.team2FlagIconDetail);
 
 
     indicator.team2RankDetail = new St.Label({
@@ -319,72 +351,55 @@ export function buildDetailsSection(indicator) {
         x_align: Clutter.ActorAlign.END,
     });
 
-    indicator.team1Player1Detail = new St.Label({
-        text: 'Unknown Player',
-        style_class: 'player_name_detail',
-    });
+    function createPlayerSlot(isTeam2 = false) {
+        const row = new St.BoxLayout({
+            style_class: 'player_row',
+            y_align: Clutter.ActorAlign.CENTER,
+            x_align: isTeam2 ? Clutter.ActorAlign.END : Clutter.ActorAlign.START,
+        });
 
-    indicator.team1Player2Detail = new St.Label({
-        text: 'Unknown Player',
-        style_class: 'player_name_detail',
-    });
+        const flag = new St.Widget({
+            style_class: isTeam2 ? 'player_flag_icon player_flag_icon_right' : 'player_flag_icon player_flag_icon_left',
+            y_align: Clutter.ActorAlign.CENTER,
+        });
 
-    indicator.team1Player3Detail = new St.Label({
-        text: 'Unknown Player',
-        style_class: 'player_name_detail',
-    });
+        const name = new St.Label({
+            text: '',
+            style_class: 'player_name_detail',
+            y_align: Clutter.ActorAlign.CENTER,
+        });
 
-    indicator.team1Player4Detail = new St.Label({
-        text: 'Unknown Player',
-        style_class: 'player_name_detail',
-    });
+        const rating = new St.Label({
+            text: '',
+            style_class: 'player_rating_detail',
+            y_align: Clutter.ActorAlign.CENTER,
+        });
 
-    indicator.team1Player5Detail = new St.Label({
-        text: 'Unknown Player',
-        style_class: 'player_name_detail',
-    });
+        if (!isTeam2) {
+            row.add_child(flag);
+            row.add_child(name);
+            row.add_child(rating);
+        } else {
+            row.add_child(rating);
+            row.add_child(name);
+            row.add_child(flag);
+        }
 
-    indicator.team2Player1Detail = new St.Label({
-        text: 'Unknown Player',
-        style_class: 'player_name_detail',
-    });
+        return { row, flag, name, rating };
+    }
 
-    indicator.team2Player2Detail = new St.Label({
-        text: 'Unknown Player',
-        style_class: 'player_name_detail',
-    });
+    indicator.team1PlayerSlots = [];
+    indicator.team2PlayerSlots = [];
 
-    indicator.team2Player3Detail = new St.Label({
-        text: 'Unknown Player',
-        style_class: 'player_name_detail',
-    });
+    for (let i = 0; i < 5; i++) {
+        const slot1 = createPlayerSlot(false);
+        indicator.team1PlayerSlots.push(slot1);
+        indicator.team1PlayersContainer.add_child(slot1.row);
 
-    indicator.team2Player4Detail = new St.Label({
-        text: 'Unknown Player',
-        style_class: 'player_name_detail',
-    });
-
-    indicator.team2Player5Detail = new St.Label({
-        text: 'Unknown Player',
-        style_class: 'player_name_detail',
-    });
-
-    //making array of labels to make it easier to load names
-    indicator.team1PlayerLabels = [
-        indicator.team1Player1Detail,
-        indicator.team1Player2Detail,
-        indicator.team1Player3Detail,
-        indicator.team1Player4Detail,
-        indicator.team1Player5Detail,
-    ];
-
-    indicator.team2PlayerLabels = [
-        indicator.team2Player1Detail,
-        indicator.team2Player2Detail,
-        indicator.team2Player3Detail,
-        indicator.team2Player4Detail,
-        indicator.team2Player5Detail,
-    ];
+        const slot2 = createPlayerSlot(true);
+        indicator.team2PlayerSlots.push(slot2);
+        indicator.team2PlayersContainer.add_child(slot2.row);
+    }
 
     indicator.ratingsSubtitle = new St.Label({
         text: 'Approximate ratings from last 6 months',
@@ -406,18 +421,6 @@ export function buildDetailsSection(indicator) {
         style: 'min-width: 60px;',
     });
 
-    indicator.team1PlayersContainer.add_child(indicator.team1Player1Detail);
-    indicator.team1PlayersContainer.add_child(indicator.team1Player2Detail);
-    indicator.team1PlayersContainer.add_child(indicator.team1Player3Detail);
-    indicator.team1PlayersContainer.add_child(indicator.team1Player4Detail);
-    indicator.team1PlayersContainer.add_child(indicator.team1Player5Detail);
-
-    indicator.team2PlayersContainer.add_child(indicator.team2Player1Detail);
-    indicator.team2PlayersContainer.add_child(indicator.team2Player2Detail);
-    indicator.team2PlayersContainer.add_child(indicator.team2Player3Detail);
-    indicator.team2PlayersContainer.add_child(indicator.team2Player4Detail);
-    indicator.team2PlayersContainer.add_child(indicator.team2Player5Detail);
-
     indicator.rosterContainer.add_child(indicator.team1PlayersContainer);
     indicator.rosterContainer.add_child(spacer2)
     indicator.rosterContainer.add_child(indicator.team2PlayersContainer);
@@ -427,11 +430,11 @@ export function buildDetailsSection(indicator) {
     indicator.mainPlayersContainer.add_child(indicator.ratingsSubtitle);
 
     indicator.team1ContainerDetail.add_child(indicator.team1IconDetail);
-    indicator.team1ContainerDetail.add_child(indicator.team1NameDetail);
+    indicator.team1ContainerDetail.add_child(indicator.team1NameContainer);
     indicator.team1ContainerDetail.add_child(indicator.team1RankDetail);
     indicator.team1ContainerDetail.add_child(indicator.team1ScoreDetail);
     indicator.team2ContainerDetail.add_child(indicator.team2IconDetail);
-    indicator.team2ContainerDetail.add_child(indicator.team2NameDetail);
+    indicator.team2ContainerDetail.add_child(indicator.team2NameContainer);
     indicator.team2ContainerDetail.add_child(indicator.team2RankDetail);
     indicator.team2ContainerDetail.add_child(indicator.team2ScoreDetail);
 

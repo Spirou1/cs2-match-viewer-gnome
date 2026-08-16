@@ -3,7 +3,7 @@ import Clutter from 'gi://Clutter';
 import Pango from 'gi://Pango';
 
 import * as load_matches from './match_controller.js';
-import { parseMatchMaps, getCachedImageUri, getCountryFlagEmoji, formatRating } from './utils.js';
+import { parseMatchMaps, getCachedImageUri, getCountryFlagUri, formatRating } from './utils.js';
 
 export function groupMatchesByTournament(matchesList) {
     if (!Array.isArray(matchesList)) return {};
@@ -299,8 +299,8 @@ export async function createMatchCard(indicator, match, matchesJson) {
             const detailTeam1Id = String(matchDetailJson?.team1?.id || matchDetailJson?.team1_id || '');
             const detailTeam2Id = String(matchDetailJson?.team2?.id || matchDetailJson?.team2_id || '');
 
-            const detailTeam1Flag = getCountryFlagEmoji(matchDetailJson?.team1?.country?.code);
-            const detailTeam2Flag = getCountryFlagEmoji(matchDetailJson?.team2?.country?.code);
+            const detailTeam1Flag = getCountryFlagUri(matchDetailJson?.team1?.country?.code);
+            const detailTeam2Flag = getCountryFlagUri(matchDetailJson?.team2?.country?.code);
 
             if (detailTeam1Id === String(match.team1)) {
                 indicator.team1Flag = detailTeam1Flag;
@@ -322,7 +322,7 @@ export async function createMatchCard(indicator, match, matchesJson) {
                     .slice(0, 5)
                     .map(p => ({
                         nickname: p.nickname,
-                        flag: getCountryFlagEmoji(p.country?.code),
+                        flag: getCountryFlagUri(p.country?.code),
                         rating: formatRating(p.six_month_avg_rating),
                     }));
 
@@ -331,18 +331,34 @@ export async function createMatchCard(indicator, match, matchesJson) {
                     .slice(0, 5)
                     .map(p => ({
                         nickname: p.nickname,
-                        flag: getCountryFlagEmoji(p.country?.code),
+                        flag: getCountryFlagUri(p.country?.code),
                         rating: formatRating(p.six_month_avg_rating),
                     }));
 
-                indicator.team1PlayerLabels.forEach((labelWidget, index) => {
+                indicator.team1PlayerSlots.forEach((slot, index) => {
                     const player = team1Players[index];
-                    labelWidget.text = player ? `${player.flag} ${player.nickname}   ${player.rating}` : '';
+                    if (player) {
+                        slot.flag.style = player.flag ? `background-image: url("${player.flag}");` : '';
+                        slot.flag.visible = !!player.flag;
+                        slot.name.text = ` ${player.nickname} `;
+                        slot.rating.text = `  ${player.rating}`;
+                        slot.row.visible = true;
+                    } else {
+                        slot.row.visible = false;
+                    }
                 });
 
-                indicator.team2PlayerLabels.forEach((labelWidget, index) => {
+                indicator.team2PlayerSlots.forEach((slot, index) => {
                     const player = team2Players[index];
-                    labelWidget.text = player ? `${player.rating}   ${player.nickname} ${player.flag}` : '';
+                    if (player) {
+                        slot.flag.style = player.flag ? `background-image: url("${player.flag}");` : '';
+                        slot.flag.visible = !!player.flag;
+                        slot.name.text = ` ${player.nickname} `;
+                        slot.rating.text = `${player.rating}  `;
+                        slot.row.visible = true;
+                    } else {
+                        slot.row.visible = false;
+                    }
                 });
 
                 indicator.team1RankDetail.text = `#${team1Rank}`;
@@ -404,7 +420,7 @@ export async function createMatchCard(indicator, match, matchesJson) {
                                 }
 
                                 if (winnerName) {
-                                    statusText = ` • Winner: ${winnerFlag} ${winnerName}`;
+                                    statusText = ` • Winner: ${winnerName}`;
                                 } else {
                                     statusText = ' (Finished)';
                                 }
@@ -445,8 +461,12 @@ export async function createMatchCard(indicator, match, matchesJson) {
                 }
 
                 indicator.tournamentNameDetail.text = tournamentName;
-                indicator.team1NameDetail.text = `${indicator.team1Flag} ${team1name}`;
-                indicator.team2NameDetail.text = `${indicator.team2Flag} ${team2name}`;
+                indicator.team1NameDetail.text = team1name;
+                indicator.team2NameDetail.text = team2name;
+                indicator.team1FlagIconDetail.style = indicator.team1Flag ? `background-image: url("${indicator.team1Flag}");` : '';
+                indicator.team1FlagIconDetail.visible = !!indicator.team1Flag;
+                indicator.team2FlagIconDetail.style = indicator.team2Flag ? `background-image: url("${indicator.team2Flag}");` : '';
+                indicator.team2FlagIconDetail.visible = !!indicator.team2Flag;
                 indicator.team1ScoreDetail.text = String(team1ScoreText);
                 indicator.team2ScoreDetail.text = String(team2ScoreText);
 

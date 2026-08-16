@@ -153,13 +153,26 @@
     margin-top: 10px;
 }
 
+.team_name_container {
+    margin-top: 8px;
+}
+
 .team_name_detail {
     font-size: 18px;
     font-weight: bold;
     color: white;
-    margin-top: 8px;
     max-width: 250px;
     text-align: center;
+}
+
+.team_flag_detail {
+    width: 20px;
+    height: 15px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-radius: 2px;
+    margin: 0 8px;
 }
 
 .team_country_detail {
@@ -299,6 +312,33 @@
     font-size: 15px;
     color: #e0e0e0;
     padding: 3px 0;
+}
+
+.player_row {
+    padding: 2px 0;
+}
+
+.player_flag_icon {
+    width: 20px;
+    height: 15px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-radius: 2px;
+}
+
+.player_flag_icon_left {
+    margin-right: 6px;
+}
+
+.player_flag_icon_right {
+    margin-left: 6px;
+}
+
+.player_rating_detail {
+    font-size: 13px;
+    color: #d98518;
+    font-weight: bold;
 }
 
 .ratings_subtitle {
