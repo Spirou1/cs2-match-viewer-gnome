@@ -403,20 +403,15 @@ export async function createMatchCard(indicator, match, matchesJson) {
                                 const isWinnerMap = mapsScore[index] === true;
                                 const winningTeamId = isWinnerMap ? winnerTeamId : loserTeamId;
                                 let winnerName;
-                                let winnerFlag;
 
                                 if (winningTeamId === String(match.team1)) {
                                     winnerName = team1name;
-                                    winnerFlag = indicator.team1Flag;
                                 } else if (winningTeamId === String(match.team2)) {
                                     winnerName = team2name;
-                                    winnerFlag = indicator.team2Flag;
                                 } else if (winningTeamId === detailTeam1Id) {
                                     winnerName = matchDetailJson?.team1?.name || team1name;
-                                    winnerFlag = detailTeam1Flag;
                                 } else if (winningTeamId === detailTeam2Id) {
                                     winnerName = matchDetailJson?.team2?.name || team2name;
-                                    winnerFlag = detailTeam2Flag;
                                 }
 
                                 if (winnerName) {

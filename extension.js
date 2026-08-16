@@ -85,13 +85,13 @@ const Indicator = GObject.registerClass(
         }
 
         _connectEvents() {
-            this.backButton.connect('clicked', () => {
+            this._backButtonId = this.backButton.connect('clicked', () => {
                 this.mainPage.visible = true;
                 this.detailsPage.visible = false;
             });
 
             if (this.settingsButton) {
-                this.settingsButton.connect('clicked', () => {
+                this._settingsButtonId = this.settingsButton.connect('clicked', () => {
                     this._extension.openPreferences();
                 });
             }
@@ -103,7 +103,7 @@ const Indicator = GObject.registerClass(
                 });
             }
 
-            this.liveTabButton.connect('clicked', () => {
+            this._liveTabButtonId = this.liveTabButton.connect('clicked', () => {
                 this.liveTabButton.add_style_class_name('tab_button_active');
                 this.finishedTabButton.remove_style_class_name('tab_button_active');
 
@@ -111,7 +111,7 @@ const Indicator = GObject.registerClass(
                 this.finishedCardsContainer.visible = false;
             });
 
-            this.finishedTabButton.connect('clicked', () => {
+            this._finishedTabButtonId = this.finishedTabButton.connect('clicked', () => {
                 this.finishedTabButton.add_style_class_name('tab_button_active');
                 this.liveTabButton.remove_style_class_name('tab_button_active');
 
@@ -131,6 +131,26 @@ const Indicator = GObject.registerClass(
             if (this._settings && this._settingsChangedId) {
                 this._settings.disconnect(this._settingsChangedId);
                 this._settingsChangedId = null;
+            }
+
+            if (this.backButton && this._backButtonId) {
+                this.backButton.disconnect(this._backButtonId);
+                this._backButtonId = null;
+            }
+
+            if (this.settingsButton && this._settingsButtonId) {
+                this.settingsButton.disconnect(this._settingsButtonId);
+                this._settingsButtonId = null;
+            }
+
+            if (this.liveTabButton && this._liveTabButtonId) {
+                this.liveTabButton.disconnect(this._liveTabButtonId);
+                this._liveTabButtonId = null;
+            }
+
+            if (this.finishedTabButton && this._finishedTabButtonId) {
+                this.finishedTabButton.disconnect(this._finishedTabButtonId);
+                this._finishedTabButtonId = null;
             }
 
             super.destroy();
