@@ -237,6 +237,7 @@ export function buildDetailsSection(indicator) {
     indicator.team1ContainerDetail = new St.BoxLayout({
         vertical: true,
         x_expand: true,
+        x_align: Clutter.ActorAlign.CENTER,
     });
 
     indicator.team1IconDetail = new St.Widget({
@@ -281,7 +282,8 @@ export function buildDetailsSection(indicator) {
     indicator.team2ContainerDetail = new St.BoxLayout({
         vertical: true,
         x_expand: true,
-    })
+        x_align: Clutter.ActorAlign.CENTER,
+    });
 
     indicator.team2IconDetail = new St.Widget({
         style_class: 'team_logo_detail',
@@ -402,7 +404,7 @@ export function buildDetailsSection(indicator) {
     }
 
     indicator.ratingsSubtitle = new St.Label({
-        text: 'Approximate ratings from last 6 months',
+        text: 'Approximate ratings from last 6 months\nRosters may not always be accurate.',
         style_class: 'ratings_subtitle',
     });
 
@@ -410,10 +412,6 @@ export function buildDetailsSection(indicator) {
         vertical: true,
         x_expand: true,
         style_class: 'maps_container',
-    });
-
-    const spacer1 = new St.Widget({
-        x_expand: true,
     });
 
     const spacer2 = new St.Widget({
@@ -439,7 +437,6 @@ export function buildDetailsSection(indicator) {
     indicator.team2ContainerDetail.add_child(indicator.team2ScoreDetail);
 
     indicator.teamsLogosDetailContainer.add_child(indicator.team1ContainerDetail);
-    indicator.teamsLogosDetailContainer.add_child(spacer1);
     indicator.teamsLogosDetailContainer.add_child(indicator.team2ContainerDetail);
 
 
